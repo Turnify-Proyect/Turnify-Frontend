@@ -2,9 +2,7 @@ import { useState, useEffect } from "react";
 import ServiceCard from "../../components/ServiceCard/ServiceCard";
 //import services from "../../data/services";
 import "./Services.css";
-
-
-const categories = ["Todos", "Masajes", "Faciales", "Uñas", "Cabello", "Spa"];
+import Navbar from "../../components/Header/Navbar";
 
 const Services = () => {
   const [selectedCategory, setSelectedCategory] = useState("Todos");
@@ -33,10 +31,17 @@ const Services = () => {
       getServices();
     }, []);
 
-  const filteredServices =
+const activeServices = services.filter((service) => service.isActive);
+
+const categories = [
+  "Todos",
+  ...new Set(activeServices.map((service) => service.category)),
+];
+
+const filteredServices =
   selectedCategory === "Todos"
-    ? services
-    : services.filter(
+    ? activeServices
+    : activeServices.filter(
         (service) => service.category === selectedCategory
       );
 
@@ -49,6 +54,8 @@ if (error) {
 }
 
   return (
+    <>
+     <Navbar />
      <main className="services-page">
        <section className="services-container">
 
@@ -81,6 +88,7 @@ if (error) {
        </section>
      </main>
    );
-};
+   </>
+)};
 
 export default Services;
