@@ -87,6 +87,7 @@
 
 .navbar-register {
   padding: 9px 16px;
+  text-decoration: none;
   background-color: var(--primary);
   color: var(--primary-foreground);
   border-radius: 8px;

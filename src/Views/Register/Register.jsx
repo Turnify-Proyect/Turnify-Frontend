@@ -1,7 +1,10 @@
 import { useState } from "react";
 import "./Register.css";
+import Navbar from "../../components/Header/Navbar";
+import { Link, useNavigate } from "react-router-dom";
 
 function Register() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -26,7 +29,6 @@ function Register() {
 
     setLoading(true);
     try {
-        
       // TODO: conectar al endpoint de registro real cuando esté disponible
       // const response = await fetch("URL_DEL_ENDPOINT/auth/register", {
       //   method: "POST",
@@ -50,109 +52,112 @@ function Register() {
   }
 
   return (
-    <div className="register-page">
-      <div className="register-image">
-        <div className="register-testimonial">
-          <p className="register-testimonial-text">
-            "Turnify cambió mi rutina de bienestar"
-          </p>
-          <p className="register-testimonial-author">— Camila Torres</p>
-        </div>
-      </div>
-
-      <div className="register-form-section">
-        <div className="register-form-wrapper">
-          <a href="/" className="register-logo">
-            <span className="register-logo-icon">T</span>
-            <span className="register-logo-text">Turnify</span>
-          </a>
-
-          <h1 className="register-title">Crear cuenta</h1>
-          <p className="register-subtitle">
-            Completá el formulario para registrarte.
-          </p>
-
-          <button
-            type="button"
-            className="register-google-button"
-            onClick={handleGoogleRegister}
-          >
-            Continuar con Google
-          </button>
-
-          <div className="register-divider">
-            <span className="register-divider-line" />
-            <span className="register-divider-text">o</span>
-            <span className="register-divider-line" />
+    <>
+      <Navbar />
+      <div className="register-page">
+        <div className="register-image">
+          <div className="register-testimonial">
+            <p className="register-testimonial-text">
+              "Turnify cambió mi rutina de bienestar"
+            </p>
+            <p className="register-testimonial-author">— Camila Torres</p>
           </div>
+        </div>
 
-          <form onSubmit={handleSubmit} className="register-form">
-            <div className="register-field">
-              <label htmlFor="name" className="register-label">
-                Nombre completo
-              </label>
-              <input
-                id="name"
-                name="name"
-                type="text"
-                value={formData.name}
-                onChange={handleChange}
-                placeholder="Valentina Reyes"
-                className="register-input"
-              />
-            </div>
+        <div className="register-form-section">
+          <div className="register-form-wrapper">
+            <Link to="/" className="register-logo">
+              <span className="register-logo-icon">T</span>
+              <span className="register-logo-text">Turnify</span>
+            </Link>
 
-            <div className="register-field">
-              <label htmlFor="email" className="register-label">
-                Correo electrónico
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleChange}
-                placeholder="hola@email.com"
-                className="register-input"
-              />
-            </div>
-
-            <div className="register-field">
-              <label htmlFor="password" className="register-label">
-                Contraseña
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="••••••••"
-                className="register-input"
-              />
-            </div>
-
-            {error && <p className="register-error">{error}</p>}
+            <h1 className="register-title">Crear cuenta</h1>
+            <p className="register-subtitle">
+              Completá el formulario para registrarte.
+            </p>
 
             <button
-              type="submit"
-              className="register-submit-button"
-              disabled={loading}
+              type="button"
+              className="register-google-button"
+              onClick={handleGoogleRegister}
             >
-              {loading ? "Creando cuenta..." : "Crear Cuenta"}
+              Continuar con Google
             </button>
-          </form>
 
-          <p className="register-login-link">
-            ¿Ya tenés cuenta? <a href="/login">Iniciar Sesión</a>
-          </p>
+            <div className="register-divider">
+              <span className="register-divider-line" />
+              <span className="register-divider-text">o</span>
+              <span className="register-divider-line" />
+            </div>
 
-          <p className="register-tip">
-            Tip: Usá "admin@" para acceder como Admin, "pro@" para Profesional
-          </p>
+            <form onSubmit={handleSubmit} className="register-form">
+              <div className="register-field">
+                <label htmlFor="name" className="register-label">
+                  Nombre completo
+                </label>
+                <input
+                  id="name"
+                  name="name"
+                  type="text"
+                  value={formData.name}
+                  onChange={handleChange}
+                  placeholder="Valentina Reyes"
+                  className="register-input"
+                />
+              </div>
+
+              <div className="register-field">
+                <label htmlFor="email" className="register-label">
+                  Correo electrónico
+                </label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="hola@email.com"
+                  className="register-input"
+                />
+              </div>
+
+              <div className="register-field">
+                <label htmlFor="password" className="register-label">
+                  Contraseña
+                </label>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  placeholder="••••••••"
+                  className="register-input"
+                />
+              </div>
+
+              {error && <p className="register-error">{error}</p>}
+
+              <button
+                type="submit"
+                className="register-submit-button"
+                disabled={loading}
+              >
+                {loading ? "Creando cuenta..." : "Crear Cuenta"}
+              </button>
+            </form>
+
+            <p className="register-login-link">
+              ¿Ya tenés cuenta? <Link to="/login">Iniciar Sesión</Link>
+            </p>
+
+            <p className="register-tip">
+              Tip: Usá "admin@" para acceder como Admin, "pro@" para Profesional
+            </p>
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 

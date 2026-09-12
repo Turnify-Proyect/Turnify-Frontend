@@ -21,7 +21,9 @@ const Navbar = () => {
           <Link to="/login" className="navbar-login">
             Iniciar Sesión
           </Link>
-          <button className="navbar-register">Registrarse</button>
+          <Link to="/register" className="navbar-register">
+            Registrarse
+          </Link>
         </div>
 
       </div>
