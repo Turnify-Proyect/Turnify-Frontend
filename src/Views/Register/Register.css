@@ -1,0 +1,232 @@
+.register-page {
+  min-height: 100vh;
+  display: flex;
+  background-color: #f8f7f4;
+}
+
+.register-image {
+  display: none;
+  position: relative;
+  width: 50%;
+  background-color: #c8d8cf;
+  background-image: url("https://images.unsplash.com/photo-1787496994323-59ac5cff09f9?w=900&h=1200&fit=crop&auto=format");
+  background-size: cover;
+  background-position: center;
+}
+
+@media (min-width: 1024px) {
+  .register-image {
+    display: block;
+  }
+}
+
+.register-image::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-color: rgba(107, 142, 123, 0.3);
+}
+
+.register-testimonial {
+  position: absolute;
+  bottom: 4rem;
+  left: 3rem;
+  right: 3rem;
+  background-color: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 1rem;
+  padding: 1.5rem;
+}
+
+.register-testimonial-text {
+  font-size: 1.5rem;
+  color: #ffffff;
+  margin-bottom: 0.5rem;
+}
+
+.register-testimonial-author {
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.register-form-section {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 1.5rem;
+}
+
+@media (min-width: 1024px) {
+  .register-form-section {
+    width: 50%;
+  }
+}
+
+.register-form-wrapper {
+  width: 100%;
+  max-width: 28rem;
+}
+
+.register-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 2.5rem;
+  text-decoration: none;
+}
+
+.register-logo-icon {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  background-color: #6b8e7b;
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.register-logo-text {
+  font-size: 1.25rem;
+  color: #333333;
+}
+
+.register-title {
+  font-size: 1.875rem;
+  color: #333333;
+  margin-bottom: 0.5rem;
+}
+
+.register-subtitle {
+  color: #6c757d;
+  margin-bottom: 2rem;
+}
+
+.register-google-button {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid #e5e0d8;
+  border-radius: 0.75rem;
+  background-color: #ffffff;
+  font-weight: 600;
+  color: #333333;
+  cursor: pointer;
+  margin-bottom: 1.5rem;
+}
+
+.register-google-button:hover {
+  background-color: #f8f7f4;
+}
+
+.register-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.register-divider-line {
+  flex: 1;
+  height: 1px;
+  background-color: #e5e0d8;
+}
+
+.register-divider-text {
+  font-size: 0.75rem;
+  color: #6c757d;
+}
+
+.register-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.register-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #333333;
+  margin-bottom: 0.375rem;
+}
+
+.register-input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #e5e0d8;
+  border-radius: 0.75rem;
+  background-color: #ffffff;
+  color: #333333;
+}
+
+.register-input::placeholder {
+  color: #aaaaaa;
+}
+
+.register-input:focus {
+  outline: none;
+  border-color: #6b8e7b;
+  box-shadow: 0 0 0 3px rgba(107, 142, 123, 0.2);
+}
+
+.register-error {
+  font-size: 0.875rem;
+  color: #f43f5e;
+  background-color: #fff1f2;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+}
+
+.register-submit-button {
+  width: 100%;
+  padding: 0.875rem;
+  background-color: #6b8e7b;
+  color: #ffffff;
+  font-weight: 700;
+  border: none;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.register-submit-button:hover {
+  background-color: #5a7a69;
+}
+
+.register-submit-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.register-login-link {
+  text-align: center;
+  font-size: 0.875rem;
+  color: #6c757d;
+  margin-top: 1.5rem;
+}
+
+.register-login-link a {
+  color: #6b8e7b;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.register-login-link a:hover {
+  text-decoration: underline;
+}
+
+.register-tip {
+  text-align: center;
+  font-size: 0.75rem;
+  color: #6c757d;
+  margin-top: 1rem;
+  line-height: 1.6;
+}
