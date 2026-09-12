@@ -23,7 +23,9 @@
   font-family: "DM Serif Display", serif;
   font-size: 22px;
   color: var(--foreground);
+  text-decoration: none;
 }
+
 
 .navbar-logo-icon {
   width: 32px;

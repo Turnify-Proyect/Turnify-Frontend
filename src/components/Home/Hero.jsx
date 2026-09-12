@@ -1,4 +1,5 @@
 import "./Hero.css";
+import { Link } from "react-router-dom";
 
 const Hero = () => {
   return (
@@ -25,9 +26,9 @@ const Hero = () => {
             Reservar mi turno <span>→</span>
           </button>
 
-          <button className="hero-secondary-button">
+          <Link to="/services" className="hero-secondary-button">
             Ver servicios
-          </button>
+          </Link>
         </div>
       </div>
     </section>
