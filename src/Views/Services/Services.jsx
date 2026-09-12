@@ -2,20 +2,19 @@ import { useState, useEffect } from "react";
 import ServiceCard from "../../components/ServiceCard/ServiceCard";
 //import services from "../../data/services";
 import "./Services.css";
-
-
-const categories = ["Todos", "Masajes", "Faciales", "Uñas", "Cabello", "Spa"];
+import Navbar from "../../components/Header/Navbar";
 
 const Services = () => {
   const [selectedCategory, setSelectedCategory] = useState("Todos");
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const API_URL = import.meta.env.VITE_API_URL;
 
    useEffect(() => {
    const getServices = async () => {
      try {
-       const response = await fetch("http://localhost:3000/services");
+       const response = await fetch(`${API_URL}/services`);
 
        if (!response.ok) {
          throw new Error("No se pudieron obtener los servicios");
@@ -33,10 +32,17 @@ const Services = () => {
       getServices();
     }, []);
 
-  const filteredServices =
+const activeServices = services.filter((service) => service.isActive);
+
+const categories = [
+  "Todos",
+  ...new Set(activeServices.map((service) => service.category)),
+];
+
+const filteredServices =
   selectedCategory === "Todos"
-    ? services
-    : services.filter(
+    ? activeServices
+    : activeServices.filter(
         (service) => service.category === selectedCategory
       );
 
@@ -49,6 +55,8 @@ if (error) {
 }
 
   return (
+    <>
+     <Navbar />
      <main className="services-page">
        <section className="services-container">
 
@@ -81,6 +89,7 @@ if (error) {
        </section>
      </main>
    );
-};
+   </>
+)};
 
 export default Services;

@@ -1,8 +1,9 @@
+import { useState } from 'react'
 import './App.css'
-import Register from "./Views/Register/Register";
+import Services from "./Views/Services/Services";
 
 function App() {
-  return <Register />;
+  return <Services />;
 }
 
 export default App;

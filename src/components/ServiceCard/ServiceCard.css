@@ -1,23 +1,22 @@
 .service-card {
   overflow: hidden;
   background-color: #ffffff;
-  border: 1px solid #eeeeee;
-  border-radius: 14px;
-  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.06);
+  border-radius: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
 }
 
 .service-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.10);
 }
 
 .service-card-image {
   display: block;
   width: 100%;
-  height: 210px;
+  height: 192px;
   object-fit: cover;
 }
 
@@ -26,47 +25,52 @@
 }
 
 .service-card-category {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background-color: #eef2ef;
   color: #6b8e7b;
   font-size: 12px;
   font-weight: 600;
-  letter-spacing: 1px;
-  text-transform: uppercase;
+  text-transform: none;
+  letter-spacing: 0;
 }
 
 .service-card-content h3 {
-  margin: 8px 0 16px;
+  margin: 8px 0 8px;
   color: #333333;
-  font-size: 20px;
+  font-size: 16px;
+  font-weight: 700;
 }
 
 .service-card-info {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   color: #6c757d;
   font-size: 14px;
 }
 
 .service-card-price {
   color: #333333;
-  font-size: 18px;
-  font-weight: 600;
+  font-size: 16px;
+  font-weight: 700;
 }
 
 .service-card-button {
   width: 100%;
-  padding: 11px 16px;
+  padding: 10px 16px;
   border: none;
   border-radius: 8px;
   background-color: #6b8e7b;
   color: #ffffff;
+  font-family: "Nunito", sans-serif;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 700;
   cursor: pointer;
-  transition: opacity 0.2s ease;
 }
 
 .service-card-button:hover {
-  opacity: 0.88;
+  background-color: #5a7a69;
 }

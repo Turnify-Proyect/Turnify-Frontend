@@ -1,0 +1,126 @@
+.hero {
+  position: relative;
+  min-height: 82vh;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+.hero-background {
+  position: absolute;
+  inset: 0;
+
+  background-image: url("https://images.unsplash.com/photo-1626383137804-ff908d2753a2?w=1600&h=900&fit=crop&auto=format");
+  background-size: cover;
+  background-position: center;
+}
+
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to right,
+    rgba(51, 51, 51, 0.7),
+    rgba(51, 51, 51, 0.4),
+    transparent
+  );
+}
+
+.hero-container {
+  position: relative;
+  z-index: 1;
+
+  width: 100%;
+  max-width: 1152px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.hero-label {
+  margin: 0 0 16px;
+
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.hero-title {
+  max-width: 600px;
+  margin: 0 0 24px;
+
+  color: white;
+  font-family: "DM Serif Display", serif;
+  font-size: 72px;
+  font-weight: 400;
+  line-height: 1.1;
+}
+
+.hero-title span {
+  font-style: italic;
+}
+
+.hero-description {
+  max-width: 450px;
+  margin: 0 0 40px;
+
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 18px;
+  font-weight: 300;
+  line-height: 1.6;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 16px;
+}
+
+.hero-primary-button,
+.hero-secondary-button {
+  padding: 16px 32px;
+  border-radius: 12px;
+  font-family: "Nunito", sans-serif;
+  font-size: 16px;
+  cursor: pointer;
+  
+}
+
+.hero-primary-button {
+  border: none;
+  background-color: var(--accent);
+  color: white;
+  font-weight: 700;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+
+.hero-primary-button:hover {
+  background-color: #d9956a;
+}
+
+.hero-secondary-button {
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background-color: rgba(255, 255, 255, 0.15);
+  color: white;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.hero-secondary-button:hover {
+  background-color: rgba(255, 255, 255, 0.25);
+}
+
+@media (max-width: 768px) {
+  .hero {
+    min-height: 75vh;
+  }
+
+  .hero-title {
+    font-size: 48px;
+  }
+
+  .hero-actions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
