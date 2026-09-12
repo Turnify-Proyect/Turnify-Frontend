@@ -9,11 +9,12 @@ const Services = () => {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const API_URL = import.meta.env.VITE_API_URL;
 
    useEffect(() => {
    const getServices = async () => {
      try {
-       const response = await fetch("http://localhost:3000/services");
+       const response = await fetch(`${API_URL}/services`);
 
        if (!response.ok) {
          throw new Error("No se pudieron obtener los servicios");
