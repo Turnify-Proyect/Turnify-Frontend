@@ -1,0 +1,244 @@
+
+.loginPage {
+  background-color: #f8f7f4;
+  display: flex;
+  min-height: calc(100vh - 72px); 
+}
+
+.loginVisual {
+  background-image: url('https://images.unsplash.com/photo-1787496994323-59ac5cff09f9?w=900&h=1200&fit=crop&auto=format');
+  background-size: cover;
+  background-position: center;
+  
+  flex: 1;
+  position: relative;
+}
+
+.loginQuote {
+  position: absolute;
+  left: 32px;
+  right: 32px;
+  bottom: 32px;
+  margin: 0;
+  padding: 20px 24px;
+  background: rgba(20, 16, 12, 0.55);
+  backdrop-filter: blur(6px);
+  border-radius: 14px;
+  color: #F5F1EA;
+}
+
+.loginQuoteText {
+  margin: 0 0 6px 0;
+  font-size: 16px;
+  font-style: italic;
+  line-height: 1.4;
+}
+
+.loginQuoteAuthor {
+  font-size: 13px;
+  color: #D8CFC0;
+  font-style: normal;
+}
+
+.loginFormSide {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 24px;
+  background: #FFFFFF;
+}
+
+.loginFormWrap {
+  width: 100%;
+  max-width: 380px;
+}
+
+.loginBrand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 32px;
+}
+
+.loginBrandBadge {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: #54695A;
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loginBrandName {
+  font-size: 16px;
+  font-weight: 600;
+  color: #24291F;
+}
+
+.loginTitle {
+  font-family: "DM Serif Display", serif;
+  font-size: 36px;
+  font-weight: 400;
+  color: #24291F;
+  margin: 6 0 6px 0;
+  letter-spacing: -0.01em;
+  margin-bottom: 8px;
+}
+
+.loginSubtitle {
+  font-size: 14px;
+  color: #757F73;
+  margin: 0 0 24px 0;
+}
+
+.googleButton {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: #ffffff;
+  border: 1px solid #E1E4DE;
+  border-radius: 10px;
+  padding: 11px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #2E332C;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.googleButton:hover {
+  background: #F7F8F5;
+  border-color: #CDD2C7;
+}
+
+.googleIcon {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.loginDivider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 22px 0;
+  color: #A5AB9F;
+  font-size: 13px;
+}
+
+.loginDivider::before,
+.loginDivider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: #E4E7DF;
+}
+
+.loginForm {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 13px;
+  font-weight: 500;
+  color: #3D4339;
+}
+
+.input {
+  background: #FBFBF9;
+  border: 1px solid #E1E4DE;
+  border-radius: 9px;
+  padding: 11px 14px;
+  font-size: 14px;
+  color: #24291F;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.input::placeholder {
+  color: #A5AB9F;
+}
+
+.input:focus {
+  border-color: #54695A;
+  box-shadow: 0 0 0 3px rgba(84, 105, 90, 0.15);
+}
+
+.forgotLink {
+  align-self: flex-end;
+  font-size: 12px;
+  color: #54695A;
+  text-decoration: none;
+  margin-top: -6px;
+}
+
+.forgotLink:hover {
+  text-decoration: underline;
+}
+
+.submitButton {
+  margin-top: 4px;
+  background: #54695A;
+  color: #ffffff;
+  border: none;
+  border-radius: 9px;
+  padding: 13px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.submitButton:hover {
+  background: #435548;
+}
+
+.submitButton:focus-visible {
+  outline: 2px solid #8CA593;
+  outline-offset: 2px;
+}
+
+.registerRow {
+  text-align: center;
+  font-size: 13px;
+  color: #757F73;
+  margin: 22px 0 0 0;
+}
+
+.registerLink {
+  color: #54695A;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.registerLink:hover {
+  text-decoration: underline;
+}
+
+.loginTip {
+  text-align: center;
+  font-size: 11px;
+  color: #A5AB9F;
+  margin: 14px 0 0 0;
+}
+
+@media (min-width: 900px) {
+  .loginVisual {
+    display: block;
+  }
+}
