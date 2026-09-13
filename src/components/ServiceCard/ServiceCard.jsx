@@ -14,6 +14,7 @@ const ServiceCard = ({ service }) => {
         </span>
 
         <h3>{service.name}</h3>
+        
 
         <div className="service-card-info">
           <span>{service.durationMinutes} min</span>

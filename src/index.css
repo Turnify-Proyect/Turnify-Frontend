@@ -1,45 +1,44 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Nunito:wght@300;400;500;600;700;800&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Nunito:wght@300;400;500;600;700;800&display=swap");
 
 :root {
   --background: #f8f7f4;
   --foreground: #333333;
+
   --card: #ffffff;
   --card-foreground: #333333;
-  --border: #e5e4e7;
 
-  --sans: 'Nunito', system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: 'DM Serif Display', system-ui, 'Segoe UI', Roboto, sans-serif;
+  --primary: #6b8e7b;
+  --primary-foreground: #ffffff;
+
+  --secondary: #eef2ef;
+  --secondary-foreground: #4a5a51;
+
+  --muted: #f0ede8;
+  --muted-foreground: #6c757d;
+
+  --accent: #e8a87c;
+  --accent-foreground: #ffffff;
+
+  --border: #e5e0d8;
+  --ring: #6b8e7b;
+
+  --radius: 12px;
+
+  --sans: "Nunito", system-ui, "Segoe UI", Roboto, sans-serif;
+  --heading: "DM Serif Display", Georgia, serif;
   --mono: ui-monospace, Consolas, monospace;
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
   color: var(--foreground);
   background: var(--background);
+
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
+* {
+  box-sizing: border-box;
 }
 
 html,
@@ -54,7 +53,6 @@ body,
 #root {
   display: flex;
   flex-direction: column;
-  box-sizing: border-box;
 }
 
 body {

@@ -7,6 +7,8 @@ import CtaBanner from "../../components/Home/CtaBanner";
 import Footer from "../../components/Footer/Footer";
 
 const Home = () => {
+
+
   return (
     <>
       <Navbar />

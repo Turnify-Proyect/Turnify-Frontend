@@ -1,12 +1,19 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import Navbar from "../../components/Header/Navbar";
 import "./ClientDashboard.css";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 function ClientDashboard() {
-  const { token } = useAuth();
+  const { token, logout  } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
+
   const navigate = useNavigate();
 
   const [tab, setTab] = useState("appointments");
@@ -171,6 +178,8 @@ function ClientDashboard() {
   }
 
   return (
+    <>
+    <Navbar />
     <div className="client-dashboard">
       <div className="dashboard-container">
         <div className="dashboard-header">
@@ -179,12 +188,16 @@ function ClientDashboard() {
             <h1>{profile?.name}</h1>
           </div>
 
-          <button
-            className="new-appointment-button"
-            onClick={() => navigate("/booking")}
-          >
-            + Nuevo Turno
-          </button>
+           <div className="dashboard-actions">
+
+            <button
+              className="new-appointment-button"
+              onClick={() => navigate("/booking")}
+            >
+              + Nuevo Turno
+            </button>
+            
+          </div>
         </div>
 
         <div className="dashboard-tabs">
@@ -202,12 +215,11 @@ function ClientDashboard() {
             Mi Perfil
           </button>
 
-          <button
-            className={tab === "payments" ? "active" : ""}
-            onClick={() => setTab("payments")}
-          >
+
+          {/* <button className={tab === "payments" ? "active" : ""} onClick={() => setTab("payments")}>
             Pagos
-          </button>
+          </button> */} {/* No contemplado en las historias de usuario, se deja comentado por el momento. */}
+
         </div>
 
         {tab === "appointments" && (
@@ -376,7 +388,7 @@ function ClientDashboard() {
           </section>
         )}
 
-        {tab === "payments" && (
+        {/* {tab === "payments" && (
           <section className="payments-card">
             <h3>Historial de Pagos</h3>
 
@@ -385,11 +397,13 @@ function ClientDashboard() {
                 Todavía no conectamos el historial de pagos con el backend.
               </p>
             </div>
-          </section>
-        )}
+          </section> /* No contemplado en las historias de usuario, se deja comentado por el momento.
+        )} */}
       </div>
     </div>
+  </>
   );
+ 
 }
 
 export default ClientDashboard;

@@ -29,7 +29,7 @@ const Footer = () => {
             <p>Tu plataforma de bienestar de confianza.</p>
           </div>
 
-          {footerSections.map((section) => (
+          {/* {footerSections.map((section) => (
             <div className="footer-section" key={section.title}>
               <h4>{section.title}</h4>
 
@@ -41,7 +41,7 @@ const Footer = () => {
                 ))}
               </ul>
             </div>
-          ))}
+          ))} */} {/*  comentar hasta que decidamos si implementamos todo esto */}
         </div>
 
         <div className="footer-bottom">

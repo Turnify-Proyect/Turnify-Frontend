@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import {Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 import Navbar from "../../components/Header/Navbar";
 import "./Login.css";
 
@@ -7,41 +8,110 @@ const API_URL = "http://localhost:3000";
 
 export default function Login() {
   const navigate = useNavigate();
+  const { login } = useAuth();
+  const location = useLocation();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({});
+
+  function validateEmail() {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+  if (!email.trim()) {
+    setFieldErrors((prev) => ({
+      ...prev,
+      email: "Ingresá tu correo electrónico.",
+    }));
+    return;
+  }
+
+  if (!emailRegex.test(email)) {
+    setFieldErrors((prev) => ({
+      ...prev,
+      email: "Ingresá una dirección de correo electrónico válida.",
+    }));
+  }
+}
+
+function validatePassword() {
+  if (!password) {
+    setFieldErrors((prev) => ({
+      ...prev,
+      password: "Ingresá tu contraseña.",
+    }));
+  }
+}
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    
+
+    const newErrors = {};
+
+    if (!email.trim()) {
+      newErrors.email = "Ingresá tu correo electrónico.";
+    }
+
+    if (!password) {
+      newErrors.password = "Ingresá tu contraseña.";
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (
+      email && !emailRegex.test(email)
+    ) {
+      newErrors.email =
+        "Ingresá una dirección de correo electrónico válida.";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setFieldErrors(newErrors);
+      return;
+    }
+
     setLoading(true);
-
     try {
-      const response = await fetch(`${API_URL}/auth/signin`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      });
+    const response = await fetch(`${API_URL}/auth/signin`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email,
+        password,
+      }),
+    });
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => null);
-        throw new Error(
-          errorData?.message || "Correo o contraseña incorrectos"
-        );
+    const data = await response.json();
+
+    if (!response.ok) {
+      let message = data.message;
+
+      if (Array.isArray(message)) {
+        message = message.join(" ");
       }
 
-      const data = await response.json();
-
-      if (data.token) {
-        localStorage.setItem("token", data.token);
+      if (response.status === 401) {
+        message =
+          "El correo electrónico o la contraseña son incorrectos.";
       }
 
-      navigate("/");
-    } catch (err) {
+      throw new Error(
+        message || "No se pudo iniciar sesión."
+      );
+    }
+
+    login(data.token);
+    const destination = location.state?.from || "/dashboard";
+    navigate(destination);
+
+  } catch (err) {
       setError(err.message || "Ocurrió un error al iniciar sesión");
     } finally {
       setLoading(false);
@@ -105,8 +175,7 @@ export default function Login() {
               <span>o</span>
             </div>
 
-            <form onSubmit={handleSubmit} className="loginForm">
-              {error && <p className="loginError">{error}</p>}
+            <form onSubmit={handleSubmit} className="loginForm" noValidate>
 
               <div className="inputGroup">
                 <label className="label" htmlFor="email">
@@ -116,11 +185,25 @@ export default function Login() {
                   id="email"
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="input"
+                  onChange={(e) => {setEmail(e.target.value);
+                    if (fieldErrors.email) {
+                      setFieldErrors((prev) => ({
+                        ...prev,
+                        email: "",
+                      }));
+                    }
+                    if (error) {
+                      setError("");
+                    }
+                    }}
+                  onBlur={validateEmail}
+                  className={`input ${fieldErrors.email ? "inputError" : ""}`}
                   placeholder="hola@email.com"
-                  required
+                  
                 />
+                {fieldErrors.email && (
+                  <p className="fieldError">{fieldErrors.email}</p>
+                )}
               </div>
 
               <div className="inputGroup">
@@ -131,12 +214,31 @@ export default function Login() {
                   id="password"
                   type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="input"
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+
+                    if (fieldErrors.password) {
+                      setFieldErrors((prev) => ({
+                        ...prev,
+                        password: "",
+                      }));
+                    }
+                  
+                    if (error) {
+                      setError("");
+                    }
+                  }}
+                  onBlur={validatePassword}
+                  className={`input ${fieldErrors.password ? "inputError" : ""}`}
                   placeholder="••••••••••"
-                  required
+    
                 />
+                {fieldErrors.password && (
+                  <p className="fieldError">{fieldErrors.password}</p>
+                )}
               </div>
+
+              {error && (<p className="loginError">{error}</p>)}
 
               <a href="#forgot" className="forgotLink">
                 ¿Olvidaste tu contraseña?
@@ -149,9 +251,9 @@ export default function Login() {
 
             <p className="registerRow">
               ¿No tenés cuenta?{" "}
-              <a href="#register" className="registerLink">
-                Registrate
-              </a>
+              <Link to="/register">Registrate</Link>
+
+            
             </p>
 
             <p className="loginTip">
