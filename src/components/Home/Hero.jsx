@@ -1,7 +1,23 @@
 import "./Hero.css";
 import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../context/AuthContext";
 
 const Hero = () => {
+
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+
+  function handleBooking() {
+    if (isAuthenticated) {
+      navigate("/booking");
+    } else {
+      navigate("/login", {
+        state: { from: "/booking" },
+      });
+    }
+  }
+
   return (
     <section className="hero">
       <div className="hero-background"></div>
@@ -22,7 +38,7 @@ const Hero = () => {
         </p>
 
         <div className="hero-actions">
-          <button className="hero-primary-button">
+          <button onClick={handleBooking} className="hero-primary-button">
             Reservar mi turno <span>→</span>
           </button>
 
