@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import {Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import Navbar from "../../components/Header/Navbar";
 import "./Login.css";
+import { GoogleLogin } from "@react-oauth/google";
 
 const API_URL = "http://localhost:3000";
 
@@ -17,39 +18,45 @@ export default function Login() {
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
 
+  // Estado para el flujo de registro con Google cuando falta el teléfono
+  const [needsPhone, setNeedsPhone] = useState(false);
+  const [registrationToken, setRegistrationToken] = useState("");
+  const [phone, setPhone] = useState("");
+  const [country, setCountry] = useState("");
+  const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+
   function validateEmail() {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-  if (!email.trim()) {
-    setFieldErrors((prev) => ({
-      ...prev,
-      email: "Ingresá tu correo electrónico.",
-    }));
-    return;
+    if (!email.trim()) {
+      setFieldErrors((prev) => ({
+        ...prev,
+        email: "Ingresá tu correo electrónico.",
+      }));
+      return;
+    }
+
+    if (!emailRegex.test(email)) {
+      setFieldErrors((prev) => ({
+        ...prev,
+        email: "Ingresá una dirección de correo electrónico válida.",
+      }));
+    }
   }
 
-  if (!emailRegex.test(email)) {
-    setFieldErrors((prev) => ({
-      ...prev,
-      email: "Ingresá una dirección de correo electrónico válida.",
-    }));
+  function validatePassword() {
+    if (!password) {
+      setFieldErrors((prev) => ({
+        ...prev,
+        password: "Ingresá tu contraseña.",
+      }));
+    }
   }
-}
-
-function validatePassword() {
-  if (!password) {
-    setFieldErrors((prev) => ({
-      ...prev,
-      password: "Ingresá tu contraseña.",
-    }));
-  }
-}
-
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-    
 
     const newErrors = {};
 
@@ -63,11 +70,8 @@ function validatePassword() {
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    if (
-      email && !emailRegex.test(email)
-    ) {
-      newErrors.email =
-        "Ingresá una dirección de correo electrónico válida.";
+    if (email && !emailRegex.test(email)) {
+      newErrors.email = "Ingresá una dirección de correo electrónico válida.";
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -77,49 +81,96 @@ function validatePassword() {
 
     setLoading(true);
     try {
-    const response = await fetch(`${API_URL}/auth/signin`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        email,
-        password,
-      }),
-    });
+      const response = await fetch(`${API_URL}/auth/signin`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password,
+        }),
+      });
 
-    const data = await response.json();
+      const data = await response.json();
 
-    if (!response.ok) {
-      let message = data.message;
+      if (!response.ok) {
+        let message = data.message;
 
-      if (Array.isArray(message)) {
-        message = message.join(" ");
+        if (Array.isArray(message)) {
+          message = message.join(" ");
+        }
+
+        if (response.status === 401) {
+          message = "El correo electrónico o la contraseña son incorrectos.";
+        }
+
+        throw new Error(message || "No se pudo iniciar sesión.");
       }
 
-      if (response.status === 401) {
-        message =
-          "El correo electrónico o la contraseña son incorrectos.";
-      }
-
-      throw new Error(
-        message || "No se pudo iniciar sesión."
-      );
-    }
-
-    login(data.token);
-    const destination = location.state?.from || "/dashboard";
-    navigate(destination);
-
-  } catch (err) {
+      login(data.token);
+      const destination = location.state?.from || "/dashboard";
+      navigate(destination);
+    } catch (err) {
       setError(err.message || "Ocurrió un error al iniciar sesión");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleGoogleLogin = () => {
-    console.log("Iniciar sesión con Google");
+  const handleGoogleSuccess = async (credentialResponse) => {
+    setError("");
+    try {
+      const response = await fetch(`${API_URL}/auth/google`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ credential: credentialResponse.credential }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "No se pudo iniciar sesión con Google.");
+      }
+
+      if (data.needsPhone) {
+        setRegistrationToken(data.registrationToken);
+        setNeedsPhone(true);
+        return;
+      }
+
+      login(data.token);
+      console.log("Login Google exitoso");
+      console.log("Token recibido:", !!data.token);
+      navigate(location.state?.from || "/dashboard");
+    } catch (err) {
+      setError(err.message || "Ocurrió un error al iniciar sesión con Google.");
+    }
+  };
+
+  const handleCompleteGoogleSignUp = async (e) => {
+    e.preventDefault();
+    setError("");
+    try {
+      const response = await fetch(`${API_URL}/auth/google/complete`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ registrationToken, phone, country, address, city }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "No se pudo completar el registro.");
+      }
+
+      login(data.token);
+      console.log("Login Google exitoso");
+      console.log("Token recibido:", !!data.token);
+      navigate(location.state?.from || "/dashboard");
+    } catch (err) {
+      setError(err.message || "Ocurrió un error al completar el registro.");
+    }
   };
 
   return (
@@ -142,124 +193,164 @@ function validatePassword() {
               <span>Turnify</span>
             </div>
 
-            <h1 className="loginTitle">Bienvenida de vuelta</h1>
-            <p className="loginSubtitle">Ingresá tus datos para continuar.</p>
+            {needsPhone ? (
+              <>
+                <h1 className="loginTitle">Ya casi terminamos</h1>
+                <p className="loginSubtitle">
+                  Necesitamos tu teléfono para completar tu registro.
+                </p>
 
-            <button
-              type="button"
-              className="googleButton"
-              onClick={handleGoogleLogin}
-            >
-              <svg className="googleIcon" viewBox="0 0 18 18" aria-hidden="true">
-                <path
-                  fill="#4285F4"
-                  d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.9c1.7-1.57 2.7-3.88 2.7-6.62z"
+              <form onSubmit={handleCompleteGoogleSignUp} className="loginForm">
+                <div className="inputGroup">
+                  <label className="label" htmlFor="phone">Teléfono</label>
+                  <input
+                    id="phone"
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="input"
+                    placeholder="+54 9 341 ..."
+                    required
+                  />
+                </div>
+
+                <div className="inputGroup">
+                  <label className="label" htmlFor="country">País (opcional)</label>
+                  <input
+                    id="country"
+                    type="text"
+                    value={country}
+                    onChange={(e) => setCountry(e.target.value)}
+                    className="input"
+                    placeholder="Argentina"
+                  />
+                </div>
+
+                <div className="inputGroup">
+                  <label className="label" htmlFor="city">Ciudad (opcional)</label>
+                  <input
+                    id="city"
+                    type="text"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    className="input"
+                    placeholder="Rosario"
+                  />
+                </div>
+
+                <div className="inputGroup">
+                  <label className="label" htmlFor="address">Dirección (opcional)</label>
+                  <input
+                    id="address"
+                    type="text"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    className="input"
+                    placeholder="Av. Pellegrini 1234"
+                  />
+                </div>
+
+                {error && <p className="loginError">{error}</p>}
+
+                <button type="submit" className="submitButton">Completar registro</button>
+              </form>
+              </>
+            ) : (
+              <>
+                <h1 className="loginTitle">Bienvenida de vuelta</h1>
+                <p className="loginSubtitle">Ingresá tus datos para continuar.</p>
+
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={() => setError("No se pudo iniciar sesión con Google.")}
                 />
-                <path
-                  fill="#34A853"
-                  d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.9-2.26c-.8.54-1.84.86-3.06.86-2.35 0-4.34-1.59-5.05-3.72H.94v2.33A9 9 0 0 0 9 18z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M3.95 10.7A5.4 5.4 0 0 1 3.67 9c0-.59.1-1.17.28-1.7V4.97H.94A9 9 0 0 0 0 9c0 1.45.35 2.83.94 4.03l3.01-2.33z"
-                />
-                <path
-                  fill="#EA4335"
-                  d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .94 4.97l3.01 2.33C4.66 5.17 6.65 3.58 9 3.58z"
-                />
-              </svg>
-              Continuar con Google
-            </button>
 
-            <div className="loginDivider">
-              <span>o</span>
-            </div>
+                <div className="loginDivider">
+                  <span>o</span>
+                </div>
 
-            <form onSubmit={handleSubmit} className="loginForm" noValidate>
+                <form onSubmit={handleSubmit} className="loginForm" noValidate>
+                  <div className="inputGroup">
+                    <label className="label" htmlFor="email">
+                      Correo electrónico
+                    </label>
+                    <input
+                      id="email"
+                      type="email"
+                      value={email}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        if (fieldErrors.email) {
+                          setFieldErrors((prev) => ({
+                            ...prev,
+                            email: "",
+                          }));
+                        }
+                        if (error) {
+                          setError("");
+                        }
+                      }}
+                      onBlur={validateEmail}
+                      className={`input ${fieldErrors.email ? "inputError" : ""}`}
+                      placeholder="hola@email.com"
+                    />
+                    {fieldErrors.email && (
+                      <p className="fieldError">{fieldErrors.email}</p>
+                    )}
+                  </div>
 
-              <div className="inputGroup">
-                <label className="label" htmlFor="email">
-                  Correo electrónico
-                </label>
-                <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => {setEmail(e.target.value);
-                    if (fieldErrors.email) {
-                      setFieldErrors((prev) => ({
-                        ...prev,
-                        email: "",
-                      }));
-                    }
-                    if (error) {
-                      setError("");
-                    }
-                    }}
-                  onBlur={validateEmail}
-                  className={`input ${fieldErrors.email ? "inputError" : ""}`}
-                  placeholder="hola@email.com"
-                  
-                />
-                {fieldErrors.email && (
-                  <p className="fieldError">{fieldErrors.email}</p>
-                )}
-              </div>
+                  <div className="inputGroup">
+                    <label className="label" htmlFor="password">
+                      Contraseña
+                    </label>
+                    <input
+                      id="password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
 
-              <div className="inputGroup">
-                <label className="label" htmlFor="password">
-                  Contraseña
-                </label>
-                <input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
+                        if (fieldErrors.password) {
+                          setFieldErrors((prev) => ({
+                            ...prev,
+                            password: "",
+                          }));
+                        }
 
-                    if (fieldErrors.password) {
-                      setFieldErrors((prev) => ({
-                        ...prev,
-                        password: "",
-                      }));
-                    }
-                  
-                    if (error) {
-                      setError("");
-                    }
-                  }}
-                  onBlur={validatePassword}
-                  className={`input ${fieldErrors.password ? "inputError" : ""}`}
-                  placeholder="••••••••••"
-    
-                />
-                {fieldErrors.password && (
-                  <p className="fieldError">{fieldErrors.password}</p>
-                )}
-              </div>
+                        if (error) {
+                          setError("");
+                        }
+                      }}
+                      onBlur={validatePassword}
+                      className={`input ${fieldErrors.password ? "inputError" : ""}`}
+                      placeholder="••••••••••"
+                    />
+                    {fieldErrors.password && (
+                      <p className="fieldError">{fieldErrors.password}</p>
+                    )}
+                  </div>
 
-              {error && (<p className="loginError">{error}</p>)}
+                  {error && <p className="loginError">{error}</p>}
 
-              <a href="#forgot" className="forgotLink">
-                ¿Olvidaste tu contraseña?
-              </a>
+                  <a href="#forgot" className="forgotLink">
+                    ¿Olvidaste tu contraseña?
+                  </a>
 
-              <button type="submit" className="submitButton" disabled={loading}>
-                {loading ? "Ingresando..." : "Iniciar Sesión"}
-              </button>
-            </form>
+                  <button type="submit" className="submitButton" disabled={loading}>
+                    {loading ? "Ingresando..." : "Iniciar Sesión"}
+                  </button>
+                </form>
 
-            <p className="registerRow">
-              ¿No tenés cuenta?{" "}
-              <Link to="/register">Registrate</Link>
+                <p className="registerRow">
+                  ¿No tenés cuenta? <Link to="/register">Registrate</Link>
+                </p>
 
-            
-            </p>
-
-            <p className="loginTip">
-              Tip: Usá "admin@" para acceder como Admin, "pro@" para
-              Profesional
-            </p>
+                <p className="loginTip">
+                  Tip: Usá "admin@" para acceder como Admin, "pro@" para
+                  Profesional
+                </p>
+              </>
+            )}
           </div>
         </div>
       </div>
