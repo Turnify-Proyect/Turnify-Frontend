@@ -1,5 +1,13 @@
 import "./ServiceCard.css";
+import { useNavigate } from "react-router-dom";
+
 const ServiceCard = ({ service }) => {
+  const navigate = useNavigate();
+  const handleViewService = () => {
+    //navigate(`/services/${service.serviceId}`);
+    navigate(`/services/${service.id}`);
+  };
+
   return (
     <article className="service-card">
       <img
@@ -23,8 +31,12 @@ const ServiceCard = ({ service }) => {
           </span>
         </div>
 
-        <button className="service-card-button" type="button">
-          Reservar
+        <button
+          className="service-card-button"
+          type="button"
+          onClick={handleViewService}
+        >
+          Ver servicio
         </button>
       </div>
     </article>

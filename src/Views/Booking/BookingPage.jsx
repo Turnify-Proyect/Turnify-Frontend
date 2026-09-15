@@ -1,71 +1,153 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import Navbar from "../../components/Header/Navbar";
+import { useAuth } from "../../context/AuthContext";
 import "./BookingPage.css";
 
 function BookingPage() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const isRescheduling = location.state?.mode === "reschedule";
+  const appointmentId = location.state?.appointmentId;
+  const preselectedServiceId = location.state?.serviceId;
+  const [professionals, setProfessionals] = useState([]);
+  const [services, setServices] = useState([]);
+  const [availabilities, setAvailabilities] = useState([]);
+  const [showPaymentMessage, setShowPaymentMessage] = useState(false);
+  const API_URL = import.meta.env.VITE_API_URL;
 
-  const [step, setStep] = useState(1);
+  const { token } = useAuth();
+
+  const [step, setStep] = useState(
+    preselectedServiceId ? 2 : 1
+  );
+
+  const stepLabels = [
+    "Servicio",
+    "Profesional",
+    "Fecha y Hora",
+    "Confirmar",
+  ];
 
   const [selected, setSelected] = useState({
-    service: "",
+    service: preselectedServiceId || "",
     professional: "",
     date: "",
     time: "",
   });
 
-  const [showPaymentMessage, setShowPaymentMessage] = useState(false);
+  
 
-  const services = [
-    {
-      name: "Masaje Relajante",
-      duration: "60 min",
-      price: 4500,
-      icon: "💆",
-    },
-    {
-      name: "Limpieza Facial",
-      duration: "45 min",
-      price: 3200,
-      icon: "✨",
-    },
-    {
-      name: "Manicura Spa",
-      duration: "50 min",
-      price: 2800,
-      icon: "💅",
-    },
-    {
-      name: "Corte & Estilo",
-      duration: "40 min",
-      price: 2200,
-      icon: "✂️",
-    },
+    useEffect(() => {
+      const getServices = async () => {
+        try {
+          const response = await fetch(`${API_URL}/services`);
+        
+          if (!response.ok) {
+            throw new Error("No se pudieron obtener los servicios");
+          }
+        
+          const data = await response.json();
+        
+          setServices(data.filter((service) => service.isActive));
+        } catch (error) {
+          console.error(error);
+        }
+      };
+    
+      getServices();
+    }, []);
+  
+    useEffect(() => {
+      const getProfessionals = async () => {
+        if (!selected.service) {
+          setProfessionals([]);
+          return;
+        }
+      
+        try {
+          const response = await fetch(
+            `${API_URL}/services/${selected.service}/professionals`
+          );
+        
+          if (!response.ok) {
+            throw new Error("No se pudieron obtener los profesionales");
+          }
+        
+          const data = await response.json();
+          
+        
+          setProfessionals(data);
+        } catch (error) {
+          console.error(error);
+          setProfessionals([]);
+      }
+      };
+    
+      getProfessionals();
+    }, [selected.service]);
+  
+  
+    useEffect(() => {
+    const getAvailabilities = async () => {
+      if (!selected.professional || !token) {
+        setAvailabilities([]);
+        return;
+      }
+    
+      try {
+        const response = await fetch(
+          `${API_URL}/availability/professional/${selected.professional}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+      
+        if (!response.ok) {
+          throw new Error(
+            "No se pudo obtener la disponibilidad del profesional"
+          );
+        }
+      
+        const data = await response.json();
+      
+        console.log("Disponibilidades:", data);
+      
+        setAvailabilities(data);
+      } catch (error) {
+        console.error(error);
+        setAvailabilities([]);
+      }
+    };
+  
+    getAvailabilities();
+  }, [selected.professional, token]);
+
+    const dayNames = [
+    "sunday",
+    "monday",
+    "tuesday",
+    "wednesday",
+    "thursday",
+    "friday",
+    "saturday",
   ];
 
-  const professionals = [
-    {
-      name: "Sofía Ramírez",
-      specialty: "Masajista",
-      initials: "SR",
-    },
-    {
-      name: "Lucía Gómez",
-      specialty: "Esteticista",
-      initials: "LG",
-    },
-    {
-      name: "Martina López",
-      specialty: "Nail Artist",
-      initials: "ML",
-    },
-    {
-      name: "Carla Vega",
-      specialty: "Estilista",
-      initials: "CV",
-    },
-  ];
+  const days = Array.from({ length: 14 }, (_, index) => {
+    const date = new Date();
+    date.setDate(date.getDate() + index + 1);
+    return date;
+  }).filter((date) => {
+    const dayOfWeek = dayNames[date.getDay()];
+
+    return availabilities.some(
+      (availability) =>
+        availability.dayOfWeek === dayOfWeek
+    );
+  });
+      
 
   const times = [
     "09:00",
@@ -80,23 +162,16 @@ function BookingPage() {
     "16:00",
     "16:30",
     "17:00",
-  ];
+  ]; 
 
-  const days = Array.from({ length: 14 }, (_, index) => {
-    const date = new Date();
-    date.setDate(date.getDate() + index + 1);
-    return date;
-  });
 
-  const stepLabels = [
-    "Servicio",
-    "Profesional",
-    "Fecha y Hora",
-    "Confirmar",
-  ];
 
   const selectedService = services.find(
-    (service) => service.name === selected.service
+  (service) => service.id === selected.service
+  );
+
+  const selectedProfessional = professionals.find(
+  (item) => item.professionalId === selected.professional
   );
 
   const deposit = selectedService
@@ -177,36 +252,36 @@ function BookingPage() {
                   {services.map((service) => (
                     <button
                       type="button"
-                      key={service.name}
+                      key={service.id}
                       className={`bookingOptionCard ${
-                        selected.service === service.name
+                        selected.service === service.id
                           ? "selected"
                           : ""
                       }`}
                       onClick={() =>
                         setSelected((prev) => ({
                           ...prev,
-                          service: service.name,
+                          service: service.id,
                           professional: "",
                           date: "",
                           time: "",
                         }))
                       }
                     >
-                      <span className="bookingServiceIcon">
-                        {service.icon}
-                      </span>
+                        <span className="bookingServiceIcon">
+                          💆
+                        </span>
 
-                      <span className="bookingOptionName">
-                        {service.name}
-                      </span>
+                        <span className="bookingOptionName">
+                          {service.name}
+                        </span>
 
-                      <span className="bookingOptionInfo">
-                        {service.duration} · $
-                        {service.price.toLocaleString("es-AR")}
-                      </span>
-                    </button>
-                  ))}
+                        <span className="bookingOptionInfo">
+                          {service.durationMinutes} min · $
+                          {Number(service.price).toLocaleString("es-AR")}
+                        </span>
+                      </button>
+                    ))}
                 </div>
               </div>
             )}
@@ -218,39 +293,48 @@ function BookingPage() {
                 </h1>
 
                 <div className="bookingProfessionalGrid">
-                  {professionals.map((professional) => (
-                    <button
-                      type="button"
-                      key={professional.name}
-                      className={`bookingProfessionalCard ${
-                        selected.professional === professional.name
-                          ? "selected"
-                          : ""
-                      }`}
-                      onClick={() =>
-                        setSelected((prev) => ({
-                          ...prev,
-                          professional: professional.name,
-                          date: "",
-                          time: "",
-                        }))
-                      }
-                    >
-                      <div className="bookingProfessionalAvatar">
-                        {professional.initials}
-                      </div>
+                  {professionals.map((item) => {
+                      const professional = item.professional;
 
-                      <div>
-                        <p className="bookingProfessionalName">
-                          {professional.name}
-                        </p>
-
-                        <p className="bookingProfessionalSpecialty">
-                          {professional.specialty}
-                        </p>
-                      </div>
-                    </button>
-                  ))}
+                      return (
+                        <button
+                          type="button"
+                          key={item.professionalId}
+                          className={`bookingProfessionalCard ${
+                            selected.professional === item.professionalId
+                              ? "selected"
+                              : ""
+                          }`}
+                          onClick={() =>
+                            setSelected((prev) => ({
+                              ...prev,
+                              professional: item.professionalId,
+                              date: "",
+                              time: "",
+                            }))
+                          }
+                        >
+                          <div className="bookingProfessionalAvatar">
+                            {professional.user?.name
+                              ?.split(" ")
+                              .map((word) => word[0])
+                              .join("")
+                              .slice(0, 2)
+                              .toUpperCase()}
+                          </div>
+                            
+                          <div>
+                            <p className="bookingProfessionalName">
+                              {professional.user?.name}
+                            </p>
+                            
+                            <p className="bookingProfessionalSpecialty">
+                              {professional.specialty}
+                            </p>
+                          </div>
+                        </button>
+                      );
+                    })}
                 </div>
               </div>
             )}
@@ -336,7 +420,9 @@ function BookingPage() {
             {step === 4 && (
               <div>
                 <h1 className="bookingTitle">
-                  Confirmá tu reserva
+                  {isRescheduling
+                    ? "Confirmá la reprogramación"
+                    : "Confirmá tu reserva"}
                 </h1>
 
                 <div className="bookingSummary">
@@ -344,15 +430,15 @@ function BookingPage() {
                   <div className="bookingSummaryRow">
                     <span>Servicio</span>
                     <strong>
-                      {selected.service || "—"}
+                      {selectedService?.name || "—"}
                     </strong>
                   </div>
 
                   <div className="bookingSummaryRow">
                     <span>Profesional</span>
                     <strong>
-                      {selected.professional || "—"}
-                    </strong>
+                      {selectedProfessional?.professional?.user?.name || "—"}
+                  </strong>
                   </div>
 
                   <div className="bookingSummaryRow">
@@ -378,11 +464,17 @@ function BookingPage() {
                   </div>
 
                   <div className="bookingSummaryRow">
-                    <span>Seña (30%)</span>
+                    <span>
+                      {isRescheduling ? "Seña" : "Seña (30%)"}
+                    </span>
+
                     <strong>
-                      ${deposit.toLocaleString("es-AR")}
+                      {isRescheduling
+                        ? "Se mantiene la seña abonada"
+                        : `$${deposit.toLocaleString("es-AR")}`}
                     </strong>
                   </div>
+                  
 
                   <div className="bookingSummaryRow">
                     <span>Total</span>
@@ -399,8 +491,9 @@ function BookingPage() {
                   <span>ℹ️</span>
 
                   <p>
-                    Se te cobrará una seña del 30% ahora.
-                    El resto se abona en el centro.
+                    {isRescheduling
+                      ? "La seña abonada en la reserva original se mantiene y se aplicará al turno reprogramado."
+                      : "Se te cobrará una seña del 30% ahora. El resto se abona en el centro."}
                   </p>
                 </div>
               </div>
@@ -438,12 +531,10 @@ function BookingPage() {
                   Continuar →
                 </button>
               ) : (
-                <button
-                  type="button"
-                  className="bookingPayButton"
-                  onClick={handleConfirm}
-                >
-                  💳 Pagar Seña
+                <button type="button" className="bookingPayButton" onClick={handleConfirm}>
+                  {isRescheduling
+                    ? "Confirmar reprogramación"
+                    : "💳 Pagar Seña"}
                 </button>
               )}
             </div>
