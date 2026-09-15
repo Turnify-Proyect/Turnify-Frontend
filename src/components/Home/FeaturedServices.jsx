@@ -35,7 +35,8 @@ const FeaturedServices = () => {
 
         <div className="featured-services-grid">
           {services.map((service) => (
-            <ServiceCard key={service.serviceId} service={service} />
+            //<ServiceCard key={service.serviceId} service={service} />
+            <ServiceCard key={service.id} service={service} />
           ))}
         </div>
       </div>

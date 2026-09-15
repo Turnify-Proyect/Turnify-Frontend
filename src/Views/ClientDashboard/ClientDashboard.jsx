@@ -161,6 +161,41 @@ function ClientDashboard() {
      }
     };
 
+
+    const handleCancelAppointment = async (appointmentId) => {
+    try {
+      const response = await fetch(
+        `${API_URL}/appointments/${appointmentId}/cancel`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+
+        throw new Error(
+          errorData.message || "No se pudo cancelar el turno"
+        );
+      }
+
+      setAppointments((currentAppointments) =>
+        currentAppointments.map((appointment) =>
+          appointment.id === appointmentId
+            ? { ...appointment, status: "cancelled" }
+            : appointment
+        )
+      );
+
+      alert("Turno cancelado correctamente");
+    } catch (error) {
+      alert(error.message);
+    }
+  };
+
   if (loading) {
     return <div className="dashboard-state">Cargando...</div>;
   }
@@ -271,13 +306,17 @@ function ClientDashboard() {
                     {(appointment.status === "confirmed" ||
                       appointment.status === "pending") && (
                       <>
-                        <button className="cancel-button">
+                        <button className="cancel-button" onClick={() => handleCancelAppointment(appointment.id)}>
                           Cancelar
                         </button>
 
-                        <button
-                          className="reschedule-button"
-                          onClick={() => navigate("/booking")}
+                        <button className="reschedule-button" onClick={() => navigate("/booking", {
+                              state: {
+                                mode: "reschedule",
+                                appointmentId: appointment.id,
+                              },
+                            })
+                          }
                         >
                           Reprogramar
                         </button>

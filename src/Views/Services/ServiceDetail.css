@@ -1,0 +1,153 @@
+.service-detail {
+  min-height: calc(100vh - 80px);
+  padding: 48px 24px 72px;
+  background-color: #f8f7f4;
+}
+
+.service-detail-back {
+  display: block;
+  max-width: 1100px;
+  width: 100%;
+  margin: 0 auto 24px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #6b8e7b;
+  font-family: "Nunito", sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.service-detail-back:hover {
+  color: #5a7a69;
+}
+
+.service-detail-card {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  max-width: 1100px;
+  margin: 0 auto;
+  overflow: hidden;
+  background-color: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.service-detail-image-container {
+  min-height: 520px;
+}
+
+.service-detail-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 520px;
+  object-fit: cover;
+}
+
+.service-detail-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 48px;
+}
+
+.service-detail-category {
+  align-self: flex-start;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background-color: #eef2ef;
+  color: #6b8e7b;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.service-detail-content h1 {
+  margin: 14px 0 16px;
+  color: #333333;
+  font-family: "DM Serif Display", serif;
+  font-size: 38px;
+  font-weight: 400;
+  line-height: 1.15;
+}
+
+.service-detail-description {
+  margin: 0 0 32px;
+  color: #6c757d;
+  font-size: 16px;
+  line-height: 1.7;
+}
+
+.service-detail-info {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.service-detail-info div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px;
+  background-color: #f8f7f4;
+  border-radius: 10px;
+}
+
+.service-detail-info span {
+  color: #6c757d;
+  font-size: 13px;
+}
+
+.service-detail-info strong {
+  color: #333333;
+  font-size: 17px;
+}
+
+.service-detail-book {
+  width: 100%;
+  padding: 13px 20px;
+  border: none;
+  border-radius: 8px;
+  background-color: #6b8e7b;
+  color: #ffffff;
+  font-family: "Nunito", sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.service-detail-book:hover {
+  background-color: #5a7a69;
+}
+
+@media (max-width: 768px) {
+  .service-detail {
+    padding: 24px 16px 48px;
+  }
+
+  .service-detail-card {
+    grid-template-columns: 1fr;
+  }
+
+  .service-detail-image-container,
+  .service-detail-image {
+    min-height: 280px;
+    height: 280px;
+  }
+
+  .service-detail-content {
+    padding: 28px 24px;
+  }
+
+  .service-detail-content h1 {
+    font-size: 30px;
+  }
+
+  .service-detail-info {
+    grid-template-columns: 1fr;
+  }
+}
