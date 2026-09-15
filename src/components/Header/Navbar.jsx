@@ -26,9 +26,9 @@ const Navbar = () => {
         </Link>
 
         <nav className="navbar-links">
-            <Link to="/services">Servicios</Link>
-          <a href="#about">Sobre Nosotros</a>
-          <a href="#contact">Contacto</a>
+          <Link to="/services">Servicios</Link>
+          <Link to="/about">Sobre Nosotros</Link>
+          <Link to="/contact">Contacto</Link>
         </nav>
 
         <div className="navbar-actions">{isAuthenticated ? (

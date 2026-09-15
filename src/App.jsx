@@ -8,6 +8,8 @@ import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
 import Chatbot from "./components/Chatbot/Chatbot";
 import BookingPage from "./Views/Booking/BookingPage";
 import ServiceDetail from "./Views/Services/ServiceDetail";
+import About from "./Views/About/About";
+import Contact from "./Views/Contact/Contact";
 
 import "./App.css";
 
@@ -16,6 +18,8 @@ function App() {
     <>
     <Routes>
       <Route path="/" element={<Home />} />
+      <Route path="/about" element={<About />} />
+      <Route path="/contact" element={<Contact />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/services" element={<Services />} />
