@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import Navbar from "../../components/Header/Navbar";
@@ -11,6 +11,8 @@ export default function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
   const location = useLocation();
+
+  const isProcessingGoogle = useRef(false);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -119,6 +121,9 @@ export default function Login() {
   };
 
   const handleGoogleSuccess = async (credentialResponse) => {
+    if (isProcessingGoogle.current) return;
+    isProcessingGoogle.current = true;
+
     setError("");
     try {
       const response = await fetch(`${API_URL}/auth/google`, {
@@ -145,6 +150,10 @@ export default function Login() {
       navigate(location.state?.from || "/dashboard");
     } catch (err) {
       setError(err.message || "Ocurrió un error al iniciar sesión con Google.");
+    } finally {
+      setTimeout(() => {
+        isProcessingGoogle.current = false;
+      }, 1000);
     }
   };
 
