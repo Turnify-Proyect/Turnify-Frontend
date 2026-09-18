@@ -4,12 +4,14 @@ import { useAuth } from "../../context/AuthContext";
 
 const Navbar = () => {
 
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, logout, user } = useAuth();
   const navigate = useNavigate();
 
   const location = useLocation();
   const isLogin = location.pathname === "/login";
   const isRegister = location.pathname === "/register";
+
+  const isAdmin = user?.roles?.includes("admin");
 
   const handleLogout = () => {
     logout();
@@ -33,8 +35,11 @@ const Navbar = () => {
 
         <div className="navbar-actions">{isAuthenticated ? (
             <>
-              <Link to="/dashboard" className="navbar-login">
-                Mi cuenta
+              <Link
+                to={isAdmin ? "/admin" : "/dashboard"}
+                className="navbar-login"
+              >
+                {isAdmin ? "Panel Admin" : "Mi cuenta"}
               </Link>
           
               <button

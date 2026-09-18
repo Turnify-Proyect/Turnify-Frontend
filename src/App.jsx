@@ -10,6 +10,7 @@ import BookingPage from "./Views/Booking/BookingPage";
 import ServiceDetail from "./Views/Services/ServiceDetail";
 import About from "./Views/About/About";
 import Contact from "./Views/Contact/Contact";
+import AdminDashboard from "./Views/Admin/AdminDashboard";
 
 import "./App.css";
 
@@ -26,6 +27,7 @@ function App() {
       <Route path="/services/:id" element={<ServiceDetail />} />
       <Route path="/dashboard" element={<ProtectedRoute> <ClientDashboard /> </ProtectedRoute>}/>
       <Route path="/booking" element={<ProtectedRoute> <BookingPage /></ProtectedRoute>}/>
+      <Route path="/admin" element={<ProtectedRoute allowedRoles={["admin"]}><AdminDashboard /></ProtectedRoute>}/>
     </Routes>
     <Chatbot />
     </>

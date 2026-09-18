@@ -5,7 +5,30 @@ import Navbar from "../../components/Header/Navbar";
 import "./Login.css";
 import { GoogleLogin } from "@react-oauth/google";
 
-const API_URL = "http://localhost:3000";
+const API_URL = import.meta.env.VITE_API_URL;
+
+function getDestinationByRole(token) {
+  try {
+    const payload = token.split(".")[1];
+
+    const decodedPayload = JSON.parse(
+      atob(payload.replace(/-/g, "+").replace(/_/g, "/"))
+    );
+
+    if (decodedPayload.roles?.includes("admin")) {
+      return "/admin";
+    }
+
+    if (decodedPayload.roles?.includes("professional")) {
+      return "/professional";
+    }
+
+    return "/dashboard";
+  } catch (error) {
+    console.error("Error al obtener el rol del usuario:", error);
+    return "/dashboard";
+  }
+}
 
 export default function Login() {
   const navigate = useNavigate();
@@ -111,7 +134,7 @@ export default function Login() {
       }
 
       login(data.token);
-      const destination = location.state?.from || "/dashboard";
+      const destination = location.state?.from || getDestinationByRole(data.token);
       navigate(destination);
     } catch (err) {
       setError(err.message || "Ocurrió un error al iniciar sesión");
@@ -147,7 +170,10 @@ export default function Login() {
       login(data.token);
       console.log("Login Google exitoso");
       console.log("Token recibido:", !!data.token);
-      navigate(location.state?.from || "/dashboard");
+      const destination =
+        location.state?.from || getDestinationByRole(data.token);
+        navigate(destination);
+
     } catch (err) {
       setError(err.message || "Ocurrió un error al iniciar sesión con Google.");
     } finally {
@@ -176,7 +202,9 @@ export default function Login() {
       login(data.token);
       console.log("Login Google exitoso");
       console.log("Token recibido:", !!data.token);
-      navigate(location.state?.from || "/dashboard");
+      const destination =
+      location.state?.from || getDestinationByRole(data.token);
+      navigate(destination);
     } catch (err) {
       setError(err.message || "Ocurrió un error al completar el registro.");
     }
