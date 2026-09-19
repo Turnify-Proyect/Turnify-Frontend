@@ -2,6 +2,9 @@ import { useState } from "react";
 import "../Login/Login.css";
 import Navbar from "../../components/Header/Navbar";
 import { Link, useNavigate } from "react-router-dom";
+import { GoogleLogin } from "@react-oauth/google";
+import { useAuth } from "../../context/AuthContext";
+import CompleteGoogleRegistration from "../../components/Auth/CompleteGoogleRegistration";
 
 function Register() {
   const API_URL = import.meta.env.VITE_API_URL;
@@ -16,6 +19,13 @@ function Register() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
+  const { login } = useAuth();
+  const [needsPhone, setNeedsPhone] = useState(false);
+  const [registrationToken, setRegistrationToken] = useState("");
+  const [googlePhone, setGooglePhone] = useState("");
+  const [country, setCountry] = useState("");
+  const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
 
   function handleChange(e) {
   const { name, value } = e.target;
@@ -158,10 +168,78 @@ function validateConfirmPassword() {
     }
   }
 
-  function handleGoogleRegister() {
-    // TODO: Aca se va a conectar con el flujo de autenticación de Google cuando esté disponible
-    console.log("Continuar con Google");
+  const handleGoogleSuccess = async (credentialResponse) => {
+  setError("");
+
+  try {
+    const response = await fetch(`${API_URL}/auth/google`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        credential: credentialResponse.credential,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.message || "No se pudo continuar con Google."
+      );
+    }
+
+    if (data.needsPhone) {
+      setRegistrationToken(data.registrationToken);
+      setNeedsPhone(true);
+      return;
+    }
+
+    login(data.token);
+    navigate("/dashboard");
+  } catch (err) {
+    setError(
+      err.message || "Ocurrió un error al registrarse con Google."
+    );
   }
+};
+
+const handleCompleteGoogleSignUp = async (e) => {
+  e.preventDefault();
+  setError("");
+
+  try {
+    const response = await fetch(`${API_URL}/auth/google/complete`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        registrationToken,
+        phone: googlePhone,
+        country,
+        address,
+        city,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.message || "No se pudo completar el registro."
+      );
+    }
+
+    login(data.token);
+    navigate("/dashboard");
+  } catch (err) {
+    setError(
+      err.message || "Ocurrió un error al completar el registro."
+    );
+  }
+};
 
   return (
   <>
@@ -179,185 +257,216 @@ function validateConfirmPassword() {
 
       <div className="loginFormSide">
         <div className="loginFormWrap">
+
           <Link to="/" className="navbar-logo">
             <div className="navbar-logo-icon">T</div>
             <span>Turnify</span>
           </Link>
 
-          <h1 className="loginTitle">Crear cuenta</h1>
+          {needsPhone ? (
+            <CompleteGoogleRegistration
+              phone={googlePhone}
+              setPhone={setGooglePhone}
+              country={country}
+              setCountry={setCountry}
+              city={city}
+              setCity={setCity}
+              address={address}
+              setAddress={setAddress}
+              error={error}
+              onSubmit={handleCompleteGoogleSignUp}
+            />
+          ) : (
+            <>
+              <h1 className="loginTitle">Crear cuenta</h1>
 
-          <p className="loginSubtitle">
-            Completá el formulario para registrarte.
-          </p>
-
-          <button
-            type="button"
-            className="googleButton"
-            onClick={handleGoogleRegister}
-          >
-            <svg
-              className="googleIcon"
-              viewBox="0 0 18 18"
-              aria-hidden="true"
-            >
-              <path
-                fill="#4285F4"
-                d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.9c1.7-1.57 2.7-3.88 2.7-6.62z"
-              />
-              <path
-                fill="#34A853"
-                d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.9-2.26c-.8.54-1.84.86-3.06.86-2.35 0-4.34-1.59-5.05-3.72H.94v2.33A9 9 0 0 0 9 18z"
-              />
-              <path
-                fill="#FBBC05"
-                d="M3.95 10.7A5.4 5.4 0 0 1 3.67 9c0-.59.1-1.17.28-1.7V4.97H.94A9 9 0 0 0 0 9c0 1.45.35 2.83.94 4.03l3.01-2.33z"
-              />
-              <path
-                fill="#EA4335"
-                d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .94 4.97l3.01 2.33C4.66 5.17 6.65 3.58 9 3.58z"
-              />
-            </svg>
-
-            Continuar con Google
-          </button>
-
-          <div className="loginDivider">
-            <span>o</span>
-          </div>
-
-          <form onSubmit={handleSubmit} className="loginForm" noValidate>
-            <div className="inputGroup">
-              <label className="label" htmlFor="name">
-                Nombre completo
-              </label>
-
-              <input
-                id="name"
-                name="name"
-                type="text"
-                value={formData.name}
-                onChange={handleChange}
-                onBlur={validateName}
-                className={`input ${fieldErrors.name ? "inputError" : ""}`}
-                placeholder="Valentina Reyes"
-                
-              />
-              {fieldErrors.name && (
-                <p className="fieldError">{fieldErrors.name}</p>
-              )}
-            </div>
-
-            <div className="inputGroup">
-              <label className="label" htmlFor="email">
-                Correo electrónico
-              </label>
-
-              <input
-                id="email"
-                name="email"
-                type="email"
-                value={formData.email}
-                onChange={handleChange}
-                onBlur={validateEmail}
-                className={`input ${fieldErrors.email ? "inputError" : ""}`}
-                placeholder="hola@email.com"
-                
-              />
-              {fieldErrors.email && (<p className="fieldError">{fieldErrors.email}</p>)}
-            </div>
-
-            <div className="inputGroup">
-              <label className="label" htmlFor="phone">
-                Teléfono
-              </label>
-              
-              <input
-                id="phone"
-                name="phone"
-                type="tel"
-                value={formData.phone}
-                onChange={handleChange}
-                onBlur={validatePhone}
-                className={`input ${fieldErrors.phone ? "inputError" : ""}`}
-                placeholder="+54 341 1234567"
-                
-              />
-              {fieldErrors.phone && (
-                <p className="fieldError">{fieldErrors.phone}</p>
-              )}
-            </div>
-
-            <div className="inputGroup">
-              <label className="label" htmlFor="password">
-                Contraseña
-              </label>
-
-              <input
-                id="password"
-                name="password"
-                type="password"
-                value={formData.password}
-                onChange={handleChange}
-                onBlur={validatePassword}
-                className={`input ${fieldErrors.password ? "inputError" : ""}`}
-                placeholder="••••••••"
-                
-              />
-              {fieldErrors.password && (
-                <p className="fieldError">{fieldErrors.password}</p>
-              )}
-              <p className="password-hint">
-                Mínimo 8 caracteres, con mayúscula, minúscula, número y símbolo.
+              <p className="loginSubtitle">
+                Completá el formulario para registrarte.
               </p>
 
-            </div>
-
-            <div className="inputGroup">
-              <label className="label" htmlFor="confirmPassword">
-                Confirmar contraseña
-              </label>
-
-              <input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                onBlur={validateConfirmPassword}
-                className={`input ${
-                  fieldErrors.confirmPassword ? "inputError" : ""
-                }`}
-                placeholder="••••••••"
-                
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={() =>
+                  setError("No se pudo continuar con Google.")
+                }
               />
-              {fieldErrors.confirmPassword && (
-              <p className="fieldError">{fieldErrors.confirmPassword}</p>
-              )}
-            </div>
 
-            
+              <div className="loginDivider">
+                <span>o</span>
+              </div>
 
-            {error && <p className="loginError">{error}</p>}
+              <form
+                onSubmit={handleSubmit}
+                className="loginForm"
+                noValidate
+              >
+                <div className="inputGroup">
+                  <label className="label" htmlFor="name">
+                    Nombre completo
+                  </label>
 
-            <button
-              type="submit"
-              className="submitButton"
-              disabled={loading}
-            >
-              {loading ? "Creando cuenta..." : "Crear Cuenta"}
-            </button>
-          </form>
+                  <input
+                    id="name"
+                    name="name"
+                    type="text"
+                    value={formData.name}
+                    onChange={handleChange}
+                    onBlur={validateName}
+                    className={`input ${
+                      fieldErrors.name ? "inputError" : ""
+                    }`}
+                    placeholder="Valentina Reyes"
+                  />
 
-          <p className="registerRow">
-            ¿Ya tenés cuenta?{" "}
-            <Link to="/login" className="registerLink">
-              Iniciar Sesión
-            </Link>
-          </p>
+                  {fieldErrors.name && (
+                    <p className="fieldError">
+                      {fieldErrors.name}
+                    </p>
+                  )}
+                </div>
 
-          <p className="loginTip">
-            Tip: Usá "admin@" para acceder como Admin, "pro@" para Profesional
-          </p>
+                <div className="inputGroup">
+                  <label className="label" htmlFor="email">
+                    Correo electrónico
+                  </label>
+
+                  <input
+                    id="email"
+                    name="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    onBlur={validateEmail}
+                    className={`input ${
+                      fieldErrors.email ? "inputError" : ""
+                    }`}
+                    placeholder="hola@email.com"
+                  />
+
+                  {fieldErrors.email && (
+                    <p className="fieldError">
+                      {fieldErrors.email}
+                    </p>
+                  )}
+                </div>
+
+                <div className="inputGroup">
+                  <label className="label" htmlFor="phone">
+                    Teléfono
+                  </label>
+
+                  <input
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    value={formData.phone}
+                    onChange={handleChange}
+                    onBlur={validatePhone}
+                    className={`input ${
+                      fieldErrors.phone ? "inputError" : ""
+                    }`}
+                    placeholder="+54 341 1234567"
+                  />
+
+                  {fieldErrors.phone && (
+                    <p className="fieldError">
+                      {fieldErrors.phone}
+                    </p>
+                  )}
+                </div>
+
+                <div className="inputGroup">
+                  <label className="label" htmlFor="password">
+                    Contraseña
+                  </label>
+
+                  <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    onBlur={validatePassword}
+                    className={`input ${
+                      fieldErrors.password ? "inputError" : ""
+                    }`}
+                    placeholder="••••••••"
+                  />
+
+                  {fieldErrors.password && (
+                    <p className="fieldError">
+                      {fieldErrors.password}
+                    </p>
+                  )}
+
+                  <p className="password-hint">
+                    Mínimo 8 caracteres, con mayúscula, minúscula,
+                    número y símbolo.
+                  </p>
+                </div>
+
+                <div className="inputGroup">
+                  <label
+                    className="label"
+                    htmlFor="confirmPassword"
+                  >
+                    Confirmar contraseña
+                  </label>
+
+                  <input
+                    id="confirmPassword"
+                    name="confirmPassword"
+                    type="password"
+                    value={formData.confirmPassword}
+                    onChange={handleChange}
+                    onBlur={validateConfirmPassword}
+                    className={`input ${
+                      fieldErrors.confirmPassword
+                        ? "inputError"
+                        : ""
+                    }`}
+                    placeholder="••••••••"
+                  />
+
+                  {fieldErrors.confirmPassword && (
+                    <p className="fieldError">
+                      {fieldErrors.confirmPassword}
+                    </p>
+                  )}
+                </div>
+
+                {error && (
+                  <p className="loginError">{error}</p>
+                )}
+
+                <button
+                  type="submit"
+                  className="submitButton"
+                  disabled={loading}
+                >
+                  {loading
+                    ? "Creando cuenta..."
+                    : "Crear Cuenta"}
+                </button>
+              </form>
+
+              <p className="registerRow">
+                ¿Ya tenés cuenta?{" "}
+                <Link
+                  to="/login"
+                  className="registerLink"
+                >
+                  Iniciar Sesión
+                </Link>
+              </p>
+
+              <p className="loginTip">
+                Tip: Usá "admin@" para acceder como Admin,
+                "pro@" para Profesional
+              </p>
+            </>
+          )}
+
         </div>
       </div>
     </div>

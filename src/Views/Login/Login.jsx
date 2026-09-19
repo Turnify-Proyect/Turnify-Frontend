@@ -4,6 +4,7 @@ import { useAuth } from "../../context/AuthContext";
 import Navbar from "../../components/Header/Navbar";
 import "./Login.css";
 import { GoogleLogin } from "@react-oauth/google";
+import CompleteGoogleRegistration from "../../components/Auth/CompleteGoogleRegistration";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -79,6 +80,19 @@ export default function Login() {
     }
   }
 
+  function getLoginDestination(token, from) {
+  const roleDestination = getDestinationByRole(token);
+
+  if (
+    roleDestination === "/admin" ||
+    roleDestination === "/professional"
+  ) {
+    return roleDestination;
+  }
+
+  return from || roleDestination;
+}
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -134,8 +148,11 @@ export default function Login() {
       }
 
       login(data.token);
-      const destination = location.state?.from || getDestinationByRole(data.token);
-      navigate(destination);
+      const destination = getLoginDestination(
+          data.token,
+          location.state?.from
+        );
+        navigate(destination);
     } catch (err) {
       setError(err.message || "Ocurrió un error al iniciar sesión");
     } finally {
@@ -170,8 +187,10 @@ export default function Login() {
       login(data.token);
       console.log("Login Google exitoso");
       console.log("Token recibido:", !!data.token);
-      const destination =
-        location.state?.from || getDestinationByRole(data.token);
+      const destination = getLoginDestination(
+          data.token,
+          location.state?.from
+        );
         navigate(destination);
 
     } catch (err) {
@@ -202,8 +221,10 @@ export default function Login() {
       login(data.token);
       console.log("Login Google exitoso");
       console.log("Token recibido:", !!data.token);
-      const destination =
-      location.state?.from || getDestinationByRole(data.token);
+      const destination = getLoginDestination(
+        data.token,
+        location.state?.from
+      );
       navigate(destination);
     } catch (err) {
       setError(err.message || "Ocurrió un error al completar el registro.");
@@ -231,68 +252,19 @@ export default function Login() {
             </div>
 
             {needsPhone ? (
-              <>
-                <h1 className="loginTitle">Ya casi terminamos</h1>
-                <p className="loginSubtitle">
-                  Necesitamos tu teléfono para completar tu registro.
-                </p>
-
-              <form onSubmit={handleCompleteGoogleSignUp} className="loginForm">
-                <div className="inputGroup">
-                  <label className="label" htmlFor="phone">Teléfono</label>
-                  <input
-                    id="phone"
-                    type="tel"
-                    value={phone}
-                    onChange={(e) => setPhone(e.target.value)}
-                    className="input"
-                    placeholder="+54 9 341 ..."
-                    required
-                  />
-                </div>
-
-                <div className="inputGroup">
-                  <label className="label" htmlFor="country">País (opcional)</label>
-                  <input
-                    id="country"
-                    type="text"
-                    value={country}
-                    onChange={(e) => setCountry(e.target.value)}
-                    className="input"
-                    placeholder="Argentina"
-                  />
-                </div>
-
-                <div className="inputGroup">
-                  <label className="label" htmlFor="city">Ciudad (opcional)</label>
-                  <input
-                    id="city"
-                    type="text"
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
-                    className="input"
-                    placeholder="Rosario"
-                  />
-                </div>
-
-                <div className="inputGroup">
-                  <label className="label" htmlFor="address">Dirección (opcional)</label>
-                  <input
-                    id="address"
-                    type="text"
-                    value={address}
-                    onChange={(e) => setAddress(e.target.value)}
-                    className="input"
-                    placeholder="Av. Pellegrini 1234"
-                  />
-                </div>
-
-                {error && <p className="loginError">{error}</p>}
-
-                <button type="submit" className="submitButton">Completar registro</button>
-              </form>
-              </>
-            ) : (
+                <CompleteGoogleRegistration
+                  phone={phone}
+                  setPhone={setPhone}
+                  country={country}
+                  setCountry={setCountry}
+                  city={city}
+                  setCity={setCity}
+                  address={address}
+                  setAddress={setAddress}
+                  error={error}
+                  onSubmit={handleCompleteGoogleSignUp}
+                />
+              ) : (
               <>
                 <h1 className="loginTitle">Bienvenida de vuelta</h1>
                 <p className="loginSubtitle">Ingresá tus datos para continuar.</p>
