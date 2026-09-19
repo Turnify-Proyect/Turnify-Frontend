@@ -1,0 +1,78 @@
+/* Estado */
+
+.professional-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.professional-status.active {
+  background: #eaf7ee;
+  color: #287a45;
+}
+
+.professional-status.inactive {
+  background: #f2f2f2;
+  color: #666;
+}
+
+
+/* Servicios */
+
+.professional-services {
+  padding-top: 20px;
+}
+
+.professional-services-title {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--muted-foreground);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.professional-services-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.professional-service {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--secondary);
+  color: var(--foreground);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.professional-no-services {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 13px;
+}
+
+.professional-specialty-select {
+  min-width: 180px;
+  padding: 9px 12px;
+
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  outline: none;
+
+  background: var(--card);
+  color: var(--foreground);
+
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.professional-specialty-select:focus {
+  border-color: var(--primary);
+}

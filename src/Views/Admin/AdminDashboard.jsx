@@ -1,8 +1,11 @@
 import { useState } from "react";
 import "./AdminDashboard.css";
+import "../../components/Admin/AdminShared.css";
 
 import AdminSidebar from "../../components/Admin/AdminSidebar";
 import AdminOverview from "../../components/Admin/Overview";
+import AdminAppointments from "../../components/Admin/AdminAppointments/AdminAppointments";
+import AdminProfessionals from "../../components/Admin/AdminProfessionals/AdminProfessionals";
 
 const AdminDashboard = () => {
   const [section, setSection] = useState("overview");
@@ -13,10 +16,10 @@ const AdminDashboard = () => {
         return <AdminOverview />;
 
       case "bookings":
-        return <h1>Gestión de Reservas</h1>;
+         return <AdminAppointments />;
 
       case "professionals":
-        return <h1>Gestión de Profesionales</h1>;
+         return <AdminProfessionals />;
 
       case "clients":
         return <h1>Gestión de Clientes</h1>;

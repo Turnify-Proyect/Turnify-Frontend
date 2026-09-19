@@ -1,0 +1,159 @@
+/* =========================
+   ESTADOS DE RESERVA
+========================= */
+
+.appointment-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: capitalize;
+  white-space: nowrap;
+}
+
+.appointment-status.pending {
+  background: #fff7e6;
+  color: #9a6700;
+}
+
+.appointment-status.confirmed {
+  background: #eaf7ee;
+  color: #287a45;
+}
+
+.appointment-status.completed {
+  background: #eef2ff;
+  color: #4657a9;
+}
+
+.appointment-status.cancelled {
+  background: #fff0f0;
+  color: #b42318;
+}
+
+.appointment-status.expired {
+  background: #f2f2f2;
+  color: #666;
+}
+
+
+/* =========================
+   REPROGRAMACIÓN
+========================= */
+
+.appointment-reschedule {
+  padding: 20px 24px;
+  border-top: 1px solid var(--border);
+  background: var(--background);
+}
+
+.appointment-reschedule h3 {
+  margin: 0 0 16px;
+  color: var(--foreground);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.appointment-reschedule-error {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #fff1f1;
+  color: #b42318;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.appointment-reschedule-fields {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.appointment-reschedule-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.appointment-reschedule-field label {
+  color: var(--muted-foreground);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.appointment-reschedule-field input,
+.appointment-reschedule-field select {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  outline: none;
+  background: var(--card);
+  color: var(--foreground);
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.appointment-reschedule-field input:focus,
+.appointment-reschedule-field select:focus {
+  border-color: var(--primary);
+}
+
+
+/* Horarios */
+
+.appointment-slots {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.appointment-slot {
+  padding: 9px 14px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--card);
+  color: var(--foreground);
+  font-family: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.appointment-slot:hover {
+  border-color: var(--primary);
+}
+
+.appointment-slot.selected {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border-color: var(--primary);
+}
+
+.appointment-no-slots {
+  margin: 8px 0 0;
+  color: var(--muted-foreground);
+  font-size: 13px;
+}
+
+.appointment-reschedule-limit {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--secondary);
+  color: var(--muted-foreground);
+  font-size: 13px;
+}
+
+
+@media (max-width: 600px) {
+  .appointment-reschedule-fields {
+    grid-template-columns: 1fr;
+  }
+}
