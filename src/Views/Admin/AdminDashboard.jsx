@@ -3,10 +3,13 @@ import "./AdminDashboard.css";
 import "../../components/Admin/AdminShared.css";
 
 import AdminSidebar from "../../components/Admin/AdminSidebar";
-import AdminOverview from "../../components/Admin/Overview";
+import AdminOverview from "../../components/Admin/AdminOverview/AdminOverview";
 import AdminAppointments from "../../components/Admin/AdminAppointments/AdminAppointments";
 import AdminProfessionals from "../../components/Admin/AdminProfessionals/AdminProfessionals";
 import AdminUsers from "../../components/Admin/AdminUsers/AdminUsers";
+import AdminClients from "../../components/Admin/AdminClients/AdminClients";
+import AdminServices from "../../components/Admin/AdminServices/AdminServices";
+import AdminAvailability from "../../components/Admin/AdminAvailability/AdminAvailabitily";
 
 const AdminDashboard = () => {
   const [section, setSection] = useState("overview");
@@ -23,13 +26,13 @@ const AdminDashboard = () => {
          return <AdminProfessionals />;
 
       case "clients":
-        return <h1>Gestión de Clientes</h1>;
+        return <AdminClients />;
 
       case "services":
-        return <h1>Gestión de Servicios</h1>;
+        return <AdminServices />;
 
       case "availability":
-        return <h1>Gestión de Disponibilidad</h1>;
+        return <AdminAvailability />; 
 
       case "users":
         return <AdminUsers />;
