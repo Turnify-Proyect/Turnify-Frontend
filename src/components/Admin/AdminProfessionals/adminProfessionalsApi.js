@@ -139,3 +139,78 @@ export const fetchProfessionalServices = async (
 
   return data;
 };
+
+export const associateServiceApi = async (
+  professionalId,
+  serviceId,
+  token
+) => {
+  const response = await fetch(
+    `${API_URL}/professionals/${professionalId}/services/${serviceId}`,
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      getErrorMessage(
+        data,
+        "No se pudo asociar el servicio."
+      )
+    );
+  }
+
+  return data;
+};
+
+export const removeServiceApi = async (
+  professionalId,
+  serviceId,
+  token
+) => {
+  const response = await fetch(
+    `${API_URL}/professionals/${professionalId}/services/${serviceId}`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      getErrorMessage(
+        data,
+        "No se pudo quitar el servicio."
+      )
+    );
+  }
+
+  return data;
+};
+
+export const fetchServices = async () => {
+  const response = await fetch(`${API_URL}/services`);
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      getErrorMessage(
+        data,
+        "No se pudieron obtener los servicios."
+      )
+    );
+  }
+
+  return data;
+};

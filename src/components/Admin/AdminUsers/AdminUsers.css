@@ -1,0 +1,119 @@
+.user-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.user-status.active {
+  background: #eaf7ee;
+  color: #287a45;
+}
+
+.user-status.inactive {
+  background: #f2f2f2;
+  color: #666;
+}
+
+.users-pagination {
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.users-pagination-info {
+  color: var(--muted-foreground);
+  font-size: 13px;
+}
+
+.users-pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.users-pagination-controls span {
+  color: var(--muted-foreground);
+  font-size: 13px;
+}
+
+.users-pagination-controls button {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--foreground);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.users-pagination-controls button:hover:not(:disabled) {
+  border-color: var(--primary);
+}
+
+.users-pagination-controls button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.user-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.user-form-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  color: var(--muted-foreground);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.user-form-grid label strong {
+  color: var(--foreground);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.user-form-grid input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  outline: none;
+  background: var(--card);
+  color: var(--foreground);
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.user-form-grid input:focus {
+  border-color: var(--primary);
+}
+
+@media (max-width: 600px) {
+  .users-pagination {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .users-pagination-controls {
+    justify-content: space-between;
+  }
+
+  .user-form-grid {
+    grid-template-columns: 1fr;
+  }
+}

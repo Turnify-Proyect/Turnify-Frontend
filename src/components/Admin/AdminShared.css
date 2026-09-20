@@ -91,6 +91,41 @@
   border-color: var(--primary);
 }
 
+.admin-create-button {
+  height: 56px;
+  padding: 0 22px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  border: 1px solid var(--primary);
+  border-radius: 12px;
+
+  background: var(--primary);
+  color: var(--primary-foreground);
+
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+  white-space: nowrap;
+
+  transition:
+    opacity 0.2s,
+    transform 0.2s;
+}
+
+.admin-create-button:hover {
+  opacity: 0.9;
+}
+
+.admin-create-button:active {
+  transform: translateY(1px);
+}
+
 
 /* =========================
    CARD
@@ -388,7 +423,8 @@
     align-items: stretch;
   }
 
-  .admin-filter-select {
+  .admin-filter-select,
+  .admin-create-button  {
     width: 100%;
   }
 }

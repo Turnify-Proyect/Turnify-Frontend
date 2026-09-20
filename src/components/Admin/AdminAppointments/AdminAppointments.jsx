@@ -440,6 +440,14 @@ const rescheduleAppointment = async (id) => {
             <option value="cancelled">Cancelados</option>
             <option value="expired">Expirados</option>
           </select>
+
+          <button
+            type="button"
+            className="admin-create-button"
+          >
+            <span>+</span>
+            Crear nuevo
+          </button>
     </div>
 
       <div className="admin-card">
