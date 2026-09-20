@@ -155,3 +155,41 @@
 .professional-specialty-select:focus {
   border-color: var(--primary);
 }
+
+.professional-create-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.professional-create-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.professional-create-form select {
+  width: 100%;
+  box-sizing: border-box;
+
+  padding: 10px 12px;
+
+  border: 1px solid var(--border);
+  border-radius: 9px;
+
+  background: var(--card);
+  color: var(--foreground);
+
+  font-family: inherit;
+  font-size: 14px;
+
+  outline: none;
+}
+
+.professional-create-form select:focus {
+  border-color: var(--primary);
+}

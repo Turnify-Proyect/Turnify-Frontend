@@ -214,3 +214,57 @@ export const fetchServices = async () => {
 
   return data;
 };
+
+export const fetchUsersForProfessional = async (token) => {
+  const response = await fetch(
+    `${API_URL}/users?page=1&limit=100`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      getErrorMessage(
+        data,
+        "No se pudieron obtener los usuarios."
+      )
+    );
+  }
+
+  return data;
+};
+
+export const createProfessionalApi = async (
+  professionalData,
+  token
+) => {
+  const response = await fetch(
+    `${API_URL}/professionals`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(professionalData),
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      getErrorMessage(
+        data,
+        "No se pudo crear el profesional."
+      )
+    );
+  }
+
+  return data;
+};
