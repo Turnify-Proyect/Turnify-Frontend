@@ -72,11 +72,15 @@ export const fetchUserById = async (id, token) => {
   return data;
 };
 
-export const createUserApi = async (userData) => {
-  const response = await fetch(`${API_URL}/auth/signup`, {
+export const createUserApi = async (
+  userData,
+  token
+) => {
+  const response = await fetch(`${API_URL}/users`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(userData),
   });
@@ -168,4 +172,31 @@ export const activateUserApi = async (id, token) => {
   }
 
   return data;
+
 };
+export const updateUserRolesApi = async (id, roles, token) => {
+  const response = await fetch(
+    `${API_URL}/users/${id}/roles`,
+    {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ roles }),
+    }
+  );
+
+  const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        getErrorMessage(
+          data,
+          "No se pudieron actualizar los roles."
+        )
+      );
+    }
+
+    return data;
+  };

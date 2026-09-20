@@ -16,6 +16,9 @@ function getDestinationByRole(token) {
       atob(payload.replace(/-/g, "+").replace(/_/g, "/"))
     );
 
+        console.log("JWT DECODIFICADO:", decodedPayload);
+
+
     if (decodedPayload.roles?.includes("admin")) {
       return "/admin";
     }
