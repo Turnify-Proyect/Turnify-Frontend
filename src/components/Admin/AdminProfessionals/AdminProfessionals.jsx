@@ -6,6 +6,9 @@ import {
   activateProfessionalApi,
   deactivateProfessionalApi,
   updateProfessionalApi,
+  fetchServices,
+  associateServiceApi,
+  removeServiceApi,
 } from "./adminProfessionalsApi";
 
 import "./AdminProfessionals.css";
@@ -37,6 +40,9 @@ const AdminProfessionals = () => {
     const [isEditing, setIsEditing] = useState(false);
     const [editSpecialty, setEditSpecialty] = useState("");
 
+  const [services, setServices] = useState([]);
+  const [selectedServiceId, setSelectedServiceId] = useState("");
+
   const getProfessionals = async () => {
     try {
       setError("");
@@ -54,6 +60,18 @@ const AdminProfessionals = () => {
     }
   };
 
+  const getServices = async () => {
+  try {
+    const data = await fetchServices();
+    setServices(data);
+  } catch (err) {
+    setError(
+      err.message ||
+        "Ocurrió un error al obtener los servicios."
+    );
+  }
+};
+
   const openProfessionalDetail = async (professional) => {
   try {
     setError("");
@@ -61,10 +79,11 @@ const AdminProfessionals = () => {
     setSelectedProfessional(professional);
     setEditSpecialty(professional.specialty || "");
     setIsEditing(false);
+    setSelectedServiceId("");
 
-    const services = await fetchProfessionalServices(
-      professional.id
-    );
+
+    const services = await getProfessionalServices(professional.id);
+    
 
     setProfessionalServices(services);
   } catch (err) {
@@ -82,6 +101,7 @@ const AdminProfessionals = () => {
   setProfessionalServices([]);
   setIsEditing(false);
   setEditSpecialty("");
+  setSelectedServiceId("");
   setError("");
 };
 
@@ -144,8 +164,79 @@ const AdminProfessionals = () => {
   }
 };
 
+const getProfessionalServices = async (professionalId) => {
+  try {
+    const data = await fetchProfessionalServices(
+      professionalId
+    );
+
+    setProfessionalServices(data);
+
+    return data;
+  } catch (err) {
+    setError(
+      err.message ||
+        "No se pudieron obtener los servicios del profesional."
+    );
+
+    setProfessionalServices([]);
+
+    return [];
+  }
+};
+
+const associateService = async () => {
+  if (!selectedServiceId) {
+    setError("Seleccioná un servicio.");
+    return;
+  }
+
+  try {
+    setError("");
+
+    await associateServiceApi(
+      selectedProfessional.id,
+      selectedServiceId,
+      token
+    );
+
+    await getProfessionalServices(
+      selectedProfessional.id
+    );
+
+    setSelectedServiceId("");
+  } catch (err) {
+    setError(
+      err.message ||
+        "No se pudo asociar el servicio."
+    );
+  }
+};
+
+const removeService = async (serviceId) => {
+  try {
+    setError("");
+
+    await removeServiceApi(
+      selectedProfessional.id,
+      serviceId,
+      token
+    );
+
+    await getProfessionalServices(
+      selectedProfessional.id
+    );
+  } catch (err) {
+    setError(
+      err.message ||
+        "No se pudo quitar el servicio."
+    );
+  }
+};
+
   useEffect(() => {
     getProfessionals();
+    getServices();
   }, [token]);
 
   const filteredProfessionals = professionals.filter(
@@ -180,6 +271,13 @@ const AdminProfessionals = () => {
   if (loading) {
     return <p>Cargando profesionales...</p>;
   }
+
+  const availableServices = services.filter(
+  (service) =>
+    !professionalServices.some(
+      (item) => item.serviceId === service.id
+    )
+  );
 
   return (
     <div className="admin-page">
@@ -217,6 +315,14 @@ const AdminProfessionals = () => {
           <option value="active">Activos</option>
           <option value="inactive">Inactivos</option>
         </select>
+
+        <button
+          type="button"
+          className="admin-create-button"
+        >
+          <span>+</span>
+          Crear nuevo
+        </button>
       </div>
 
       <div className="admin-card">
@@ -398,18 +504,67 @@ const AdminProfessionals = () => {
                   {professionalServices.length > 0 ? (
                     <div className="professional-services-list">
                       {professionalServices.map((item) => (
-                        <span
+                        <div
                           key={item.serviceId}
                           className="professional-service"
                         >
-                          {item.service?.name || "Servicio"}
-                        </span>
+                          <span>
+                            {item.service?.name || "Servicio"}
+                          </span>
+                      
+                          {isEditing && (
+                            <button
+                              type="button"
+                              className="professional-service-remove"
+                              onClick={() =>
+                                removeService(item.serviceId)
+                              }
+                              aria-label={`Quitar ${
+                                item.service?.name || "servicio"
+                              }`}
+                            >
+                              ×
+                            </button>
+                          )}
+                        </div>
                       ))}
                     </div>
                   ) : (
                     <p className="professional-no-services">
                       No tiene servicios asociados.
                     </p>
+                  )}
+
+                  {isEditing && (
+                    <div className="professional-service-add">
+                      <select
+                        value={selectedServiceId}
+                        onChange={(e) =>
+                          setSelectedServiceId(e.target.value)
+                        }
+                      >
+                        <option value="">
+                          Seleccionar servicio
+                        </option>
+                      
+                        {availableServices.map((service) => (
+                          <option
+                            key={service.id}
+                            value={service.id}
+                          >
+                            {service.name}
+                          </option>
+                        ))}
+                      </select>
+                      
+                      <button
+                        type="button"
+                        onClick={associateService}
+                        disabled={!selectedServiceId}
+                      >
+                        Agregar
+                      </button>
+                    </div>
                   )}
                 </div>
               </div>
@@ -425,6 +580,7 @@ const AdminProfessionals = () => {
                           setEditSpecialty(
                             selectedProfessional.specialty || ""
                           );
+                          setSelectedServiceId("");
                           setIsEditing(false);
                           setError("");
                         }}

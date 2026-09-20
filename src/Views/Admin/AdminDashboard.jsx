@@ -6,6 +6,7 @@ import AdminSidebar from "../../components/Admin/AdminSidebar";
 import AdminOverview from "../../components/Admin/Overview";
 import AdminAppointments from "../../components/Admin/AdminAppointments/AdminAppointments";
 import AdminProfessionals from "../../components/Admin/AdminProfessionals/AdminProfessionals";
+import AdminUsers from "../../components/Admin/AdminUsers/AdminUsers";
 
 const AdminDashboard = () => {
   const [section, setSection] = useState("overview");
@@ -31,7 +32,7 @@ const AdminDashboard = () => {
         return <h1>Gestión de Disponibilidad</h1>;
 
       case "users":
-        return <h1>Gestión de Usuarios</h1>;
+        return <AdminUsers />;
 
       default:
         return <AdminOverview />;
