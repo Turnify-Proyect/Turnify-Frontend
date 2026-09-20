@@ -8,6 +8,7 @@ import {
   updateUserApi,
   deactivateUserApi,
   activateUserApi,
+  updateUserRolesApi,
 } from "./adminUsersApi";
 
 import "./AdminUsers.css";
@@ -18,6 +19,7 @@ const EMPTY_CREATE_FORM = {
   phone: "",
   password: "",
   confirmPassword: "",
+  role: "client",
   country: "",
   city: "",
   address: "",
@@ -35,7 +37,15 @@ const EMPTY_EDIT_FORM = {
 const getRoleLabel = (role) => {
   if (role === "admin") return "Administrador";
   if (role === "professional") return "Profesional";
-  return "Cliente";
+  if (role === "client") return "Cliente";
+
+  return role;
+};
+
+const getRolesLabel = (roles = []) => {
+  if (!roles || roles.length === 0) return "-";
+
+  return roles.map(getRoleLabel).join(", ");
 };
 
 const AdminUsers = () => {
@@ -56,12 +66,14 @@ const AdminUsers = () => {
   });
 
   const [selectedUser, setSelectedUser] = useState(null);
-
   const [isEditing, setIsEditing] = useState(false);
 
   const [editForm, setEditForm] = useState(
     EMPTY_EDIT_FORM
   );
+
+  // Roles que se están editando en el modal de detalle
+  const [editRoles, setEditRoles] = useState([]);
 
   const [showCreateModal, setShowCreateModal] =
     useState(false);
@@ -121,6 +133,8 @@ const AdminUsers = () => {
         address: data.address || "",
       });
 
+      setEditRoles(data.roles || []);
+
       setIsEditing(false);
     } catch (err) {
       setError(
@@ -134,6 +148,7 @@ const AdminUsers = () => {
     setSelectedUser(null);
     setIsEditing(false);
     setEditForm(EMPTY_EDIT_FORM);
+    setEditRoles([]);
     setError("");
   };
 
@@ -146,29 +161,105 @@ const AdminUsers = () => {
     }));
   };
 
+  const handleRoleChange = (roleToChange) => {
+    setEditRoles((currentRoles) => {
+      if (currentRoles.includes(roleToChange)) {
+        return currentRoles.filter(
+          (currentRole) =>
+            currentRole !== roleToChange
+        );
+      }
+
+      return [...currentRoles, roleToChange];
+    });
+  };
+
+  const cancelEditing = () => {
+    if (!selectedUser) return;
+
+    setEditForm({
+      name: selectedUser.name || "",
+      email: selectedUser.email || "",
+      phone: selectedUser.phone || "",
+      country: selectedUser.country || "",
+      city: selectedUser.city || "",
+      address: selectedUser.address || "",
+    });
+
+    setEditRoles(selectedUser.roles || []);
+
+    setIsEditing(false);
+    setError("");
+  };
+
   const saveUserChanges = async () => {
+    if (!selectedUser) return;
+
+    if (editRoles.length === 0) {
+      setError(
+        "El usuario debe tener al menos un rol."
+      );
+      return;
+    }
+
+    if (
+      editRoles.includes("client") &&
+      editRoles.includes("professional")
+    ) {
+      setError(
+        "Un usuario no puede ser cliente y profesional al mismo tiempo."
+      );
+      return;
+    }
+
     try {
       setError("");
 
+      // Actualiza los datos generales del usuario
       await updateUserApi(
         selectedUser.id,
         {
           name: editForm.name,
           email: editForm.email,
           phone: editForm.phone,
-          country: editForm.country || undefined,
+          country:
+            editForm.country || undefined,
           city: editForm.city || undefined,
-          address: editForm.address || undefined,
+          address:
+            editForm.address || undefined,
         },
         token
       );
 
-      const updatedUser = await fetchUserById(
+      // Los roles se modifican por el endpoint
+      // exclusivo para administración de roles
+      await updateUserRolesApi(
         selectedUser.id,
+        editRoles,
         token
       );
 
+      // Volvemos a consultar el usuario para
+      // mostrar los datos definitivos del backend
+      const updatedUser =
+        await fetchUserById(
+          selectedUser.id,
+          token
+        );
+
       setSelectedUser(updatedUser);
+
+      setEditForm({
+        name: updatedUser.name || "",
+        email: updatedUser.email || "",
+        phone: updatedUser.phone || "",
+        country: updatedUser.country || "",
+        city: updatedUser.city || "",
+        address: updatedUser.address || "",
+      });
+
+      setEditRoles(updatedUser.roles || []);
+
       setIsEditing(false);
 
       await getUsers();
@@ -198,12 +289,14 @@ const AdminUsers = () => {
         );
       }
 
-      const updatedUser = await fetchUserById(
-        selectedUser.id,
-        token
-      );
+      const updatedUser =
+        await fetchUserById(
+          selectedUser.id,
+          token
+        );
 
       setSelectedUser(updatedUser);
+      setEditRoles(updatedUser.roles || []);
 
       await getUsers();
     } catch (err) {
@@ -239,21 +332,31 @@ const AdminUsers = () => {
     try {
       setError("");
 
-      await createUserApi({
-        name: createForm.name,
-        email: createForm.email,
-        phone: createForm.phone,
-        password: createForm.password,
-        confirmPassword: createForm.confirmPassword,
-        country: createForm.country || undefined,
-        city: createForm.city || undefined,
-        address: createForm.address || undefined,
-      });
+      await createUserApi(
+        {
+          name: createForm.name,
+          email: createForm.email,
+          phone: createForm.phone,
+          password: createForm.password,
+          confirmPassword:
+            createForm.confirmPassword,
+
+          roles: [createForm.role],
+
+          country:
+            createForm.country || undefined,
+          city: createForm.city || undefined,
+          address:
+            createForm.address || undefined,
+        },
+        token
+      );
 
       setShowCreateModal(false);
       setCreateForm(EMPTY_CREATE_FORM);
 
       setPage(1);
+
       await getUsers();
     } catch (err) {
       setError(
@@ -268,6 +371,7 @@ const AdminUsers = () => {
       <div className="admin-page-header">
         <div>
           <h1>Usuarios</h1>
+
           <p>
             Administrá los usuarios registrados en la
             plataforma.
@@ -275,6 +379,7 @@ const AdminUsers = () => {
         </div>
       </div>
 
+      {/* FILTROS */}
       <div className="admin-filters">
         <input
           type="text"
@@ -295,11 +400,18 @@ const AdminUsers = () => {
             setPage(1);
           }}
         >
-          <option value="">Todos los roles</option>
-          <option value="client">Cliente</option>
+          <option value="">
+            Todos los roles
+          </option>
+
+          <option value="client">
+            Cliente
+          </option>
+
           <option value="professional">
             Profesional
           </option>
+
           <option value="admin">
             Administrador
           </option>
@@ -313,9 +425,17 @@ const AdminUsers = () => {
             setPage(1);
           }}
         >
-          <option value="">Todos los estados</option>
-          <option value="true">Activo</option>
-          <option value="false">Inactivo</option>
+          <option value="">
+            Todos los estados
+          </option>
+
+          <option value="true">
+            Activo
+          </option>
+
+          <option value="false">
+            Inactivo
+          </option>
         </select>
 
         <button
@@ -333,6 +453,7 @@ const AdminUsers = () => {
         </div>
       )}
 
+      {/* TABLA */}
       <div className="admin-card">
         <div className="admin-card-header">
           <h2>Usuarios registrados</h2>
@@ -345,7 +466,7 @@ const AdminUsers = () => {
                 <th>Nombre</th>
                 <th>Email</th>
                 <th>Teléfono</th>
-                <th>Rol</th>
+                <th>Roles</th>
                 <th>Estado</th>
                 <th>Acciones</th>
               </tr>
@@ -356,11 +477,15 @@ const AdminUsers = () => {
                 users.map((user) => (
                   <tr key={user.id}>
                     <td>{user.name}</td>
+
                     <td>{user.email}</td>
+
                     <td>{user.phone}</td>
 
                     <td>
-                      {getRoleLabel(user.role)}
+                      {getRolesLabel(
+                        user.roles
+                      )}
                     </td>
 
                     <td>
@@ -404,6 +529,7 @@ const AdminUsers = () => {
           </table>
         </div>
 
+        {/* PAGINACIÓN */}
         <div className="users-pagination">
           <span className="users-pagination-info">
             {pagination.total === 0
@@ -419,7 +545,10 @@ const AdminUsers = () => {
             <button
               type="button"
               onClick={() =>
-                setPage((current) => current - 1)
+                setPage(
+                  (current) =>
+                    current - 1
+                )
               }
               disabled={page === 1}
             >
@@ -434,11 +563,15 @@ const AdminUsers = () => {
             <button
               type="button"
               onClick={() =>
-                setPage((current) => current + 1)
+                setPage(
+                  (current) =>
+                    current + 1
+                )
               }
               disabled={
                 pagination.totalPages === 0 ||
-                page >= pagination.totalPages
+                page >=
+                  pagination.totalPages
               }
             >
               Siguiente
@@ -455,12 +588,19 @@ const AdminUsers = () => {
         >
           <div
             className="admin-modal"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) =>
+              e.stopPropagation()
+            }
           >
             <div className="admin-modal-header">
               <div>
-                <h2>Detalle del usuario</h2>
-                <p>{selectedUser.email}</p>
+                <h2>
+                  Detalle del usuario
+                </h2>
+
+                <p>
+                  {selectedUser.email}
+                </p>
               </div>
 
               <button
@@ -474,14 +614,26 @@ const AdminUsers = () => {
 
             <div className="admin-modal-scroll">
               <div className="admin-modal-body">
+
+                {error && (
+                  <div className="admin-error">
+                    {error}
+                  </div>
+                )}
+
                 <div className="user-form-grid">
+
+                  {/* NOMBRE */}
                   <label>
                     Nombre
+
                     {isEditing ? (
                       <input
                         name="name"
                         value={editForm.name}
-                        onChange={handleEditChange}
+                        onChange={
+                          handleEditChange
+                        }
                       />
                     ) : (
                       <strong>
@@ -490,48 +642,57 @@ const AdminUsers = () => {
                     )}
                   </label>
 
+                  {/* EMAIL */}
                   <label>
                     Email
+
                     {isEditing ? (
                       <input
                         name="email"
                         type="email"
-                        value={editForm.email}
-                        onChange={handleEditChange}
+                        value={
+                          editForm.email
+                        }
+                        onChange={
+                          handleEditChange
+                        }
                       />
                     ) : (
                       <strong>
-                        {selectedUser.email}
+                        {
+                          selectedUser.email
+                        }
                       </strong>
                     )}
                   </label>
 
+                  {/* TELÉFONO */}
                   <label>
                     Teléfono
+
                     {isEditing ? (
                       <input
                         name="phone"
-                        value={editForm.phone}
-                        onChange={handleEditChange}
+                        value={
+                          editForm.phone
+                        }
+                        onChange={
+                          handleEditChange
+                        }
                       />
                     ) : (
                       <strong>
-                        {selectedUser.phone}
+                        {
+                          selectedUser.phone
+                        }
                       </strong>
                     )}
                   </label>
 
-                  <label>
-                    Rol
-                    <strong>
-                      {getRoleLabel(
-                        selectedUser.role
-                      )}
-                    </strong>
-                  </label>
-
+                  {/* ESTADO */}
                   <label>
                     Estado
+
                     <span
                       className={`user-status ${
                         selectedUser.isActive
@@ -545,79 +706,172 @@ const AdminUsers = () => {
                     </span>
                   </label>
 
+                  {/* PAÍS */}
                   <label>
                     País
+
                     {isEditing ? (
                       <input
                         name="country"
-                        value={editForm.country}
-                        onChange={handleEditChange}
+                        value={
+                          editForm.country
+                        }
+                        onChange={
+                          handleEditChange
+                        }
                       />
                     ) : (
                       <strong>
-                        {selectedUser.country || "-"}
+                        {selectedUser.country ||
+                          "-"}
                       </strong>
                     )}
                   </label>
 
+                  {/* CIUDAD */}
                   <label>
                     Ciudad
+
                     {isEditing ? (
                       <input
                         name="city"
-                        value={editForm.city}
-                        onChange={handleEditChange}
+                        value={
+                          editForm.city
+                        }
+                        onChange={
+                          handleEditChange
+                        }
                       />
                     ) : (
                       <strong>
-                        {selectedUser.city || "-"}
+                        {selectedUser.city ||
+                          "-"}
                       </strong>
                     )}
                   </label>
 
+                  {/* DIRECCIÓN */}
                   <label>
                     Dirección
+
                     {isEditing ? (
                       <input
                         name="address"
-                        value={editForm.address}
-                        onChange={handleEditChange}
+                        value={
+                          editForm.address
+                        }
+                        onChange={
+                          handleEditChange
+                        }
                       />
                     ) : (
                       <strong>
-                        {selectedUser.address || "-"}
+                        {selectedUser.address ||
+                          "-"}
                       </strong>
                     )}
                   </label>
+
+                  {/* ROLES */}
+                  {!isEditing && (
+                    <label>
+                      Roles
+
+                      <strong>
+                        {getRolesLabel(
+                          selectedUser.roles
+                        )}
+                      </strong>
+                    </label>
+                  )}
                 </div>
+
+                {/* EDICIÓN DE ROLES */}
+                {isEditing && (
+                  <div className="user-role-group">
+                    <span>Roles</span>
+
+                    <div className="user-role-options">
+
+                      {/* CLIENTE */}
+                      <label
+                        className={`user-role-option ${
+                          editRoles.includes(
+                            "professional"
+                          )
+                            ? "disabled"
+                            : ""
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={editRoles.includes(
+                            "client"
+                          )}
+                          disabled={editRoles.includes(
+                            "professional"
+                          )}
+                          onChange={() =>
+                            handleRoleChange(
+                              "client"
+                            )
+                          }
+                        />
+
+                        Cliente
+                      </label>
+
+                      {/* PROFESIONAL */}
+                      <label className="user-role-option disabled">
+                        <input
+                          type="checkbox"
+                          checked={editRoles.includes(
+                            "professional"
+                          )}
+                          disabled
+                        />
+
+                        Profesional
+                      </label>
+
+                      {/* ADMIN */}
+                      <label className="user-role-option">
+                        <input
+                          type="checkbox"
+                          checked={editRoles.includes(
+                            "admin"
+                          )}
+                          onChange={() =>
+                            handleRoleChange(
+                              "admin"
+                            )
+                          }
+                        />
+
+                        Administrador
+                      </label>
+                    </div>
+
+                    <small className="user-role-help">
+                      El rol Profesional se
+                      administra desde la gestión
+                      de profesionales.
+                    </small>
+                  </div>
+                )}
               </div>
             </div>
 
+            {/* ACCIONES DEL MODAL */}
             <div className="admin-modal-actions">
               {isEditing ? (
                 <>
                   <button
                     type="button"
                     className="admin-action-secondary"
-                    onClick={() => {
-                      setEditForm({
-                        name:
-                          selectedUser.name || "",
-                        email:
-                          selectedUser.email || "",
-                        phone:
-                          selectedUser.phone || "",
-                        country:
-                          selectedUser.country || "",
-                        city:
-                          selectedUser.city || "",
-                        address:
-                          selectedUser.address || "",
-                      });
-
-                      setIsEditing(false);
-                      setError("");
-                    }}
+                    onClick={
+                      cancelEditing
+                    }
                   >
                     Cancelar edición
                   </button>
@@ -625,7 +879,9 @@ const AdminUsers = () => {
                   <button
                     type="button"
                     className="admin-action-primary"
-                    onClick={saveUserChanges}
+                    onClick={
+                      saveUserChanges
+                    }
                   >
                     Guardar cambios
                   </button>
@@ -639,7 +895,9 @@ const AdminUsers = () => {
                         ? "admin-action-danger"
                         : "admin-action-primary"
                     }
-                    onClick={changeUserStatus}
+                    onClick={
+                      changeUserStatus
+                    }
                   >
                     {selectedUser.isActive
                       ? "Desactivar usuario"
@@ -649,9 +907,15 @@ const AdminUsers = () => {
                   <button
                     type="button"
                     className="admin-action-secondary"
-                    onClick={() =>
-                      setIsEditing(true)
-                    }
+                    onClick={() => {
+                      setEditRoles(
+                        selectedUser.roles ||
+                          []
+                      );
+
+                      setIsEditing(true);
+                      setError("");
+                    }}
                   >
                     Editar
                   </button>
@@ -670,13 +934,17 @@ const AdminUsers = () => {
         >
           <div
             className="admin-modal"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) =>
+              e.stopPropagation()
+            }
           >
             <div className="admin-modal-header">
               <div>
                 <h2>Crear usuario</h2>
+
                 <p>
-                  Registrá una nueva cuenta en Turnify.
+                  Registrá una nueva cuenta en
+                  Turnify.
                 </p>
               </div>
 
@@ -691,81 +959,153 @@ const AdminUsers = () => {
 
             <div className="admin-modal-scroll">
               <div className="admin-modal-body">
+
+                {error && (
+                  <div className="admin-error">
+                    {error}
+                  </div>
+                )}
+
                 <div className="user-form-grid">
+
                   <label>
                     Nombre *
+
                     <input
                       name="name"
-                      value={createForm.name}
-                      onChange={handleCreateChange}
+                      value={
+                        createForm.name
+                      }
+                      onChange={
+                        handleCreateChange
+                      }
                     />
                   </label>
 
                   <label>
                     Email *
+
                     <input
                       name="email"
                       type="email"
-                      value={createForm.email}
-                      onChange={handleCreateChange}
+                      value={
+                        createForm.email
+                      }
+                      onChange={
+                        handleCreateChange
+                      }
                     />
                   </label>
 
                   <label>
                     Teléfono *
+
                     <input
                       name="phone"
-                      value={createForm.phone}
-                      onChange={handleCreateChange}
+                      value={
+                        createForm.phone
+                      }
+                      onChange={
+                        handleCreateChange
+                      }
                     />
                   </label>
 
                   <label>
+                    Rol *
+
+                    <select
+                      name="role"
+                      value={
+                        createForm.role
+                      }
+                      onChange={
+                        handleCreateChange
+                      }
+                    >
+                      <option value="client">
+                        Cliente
+                      </option>
+
+                      <option value="professional">
+                        Profesional
+                      </option>
+
+                      <option value="admin">
+                        Administrador
+                      </option>
+                    </select>
+                  </label>
+
+                  <label>
                     Contraseña *
+
                     <input
                       name="password"
                       type="password"
-                      value={createForm.password}
-                      onChange={handleCreateChange}
+                      value={
+                        createForm.password
+                      }
+                      onChange={
+                        handleCreateChange
+                      }
                     />
                   </label>
 
                   <label>
                     Confirmar contraseña *
+
                     <input
                       name="confirmPassword"
                       type="password"
                       value={
                         createForm.confirmPassword
                       }
-                      onChange={handleCreateChange}
+                      onChange={
+                        handleCreateChange
+                      }
                     />
                   </label>
 
                   <label>
                     País
+
                     <input
                       name="country"
-                      value={createForm.country}
-                      onChange={handleCreateChange}
+                      value={
+                        createForm.country
+                      }
+                      onChange={
+                        handleCreateChange
+                      }
                     />
                   </label>
 
                   <label>
                     Ciudad
+
                     <input
                       name="city"
-                      value={createForm.city}
-                      onChange={handleCreateChange}
+                      value={
+                        createForm.city
+                      }
+                      onChange={
+                        handleCreateChange
+                      }
                     />
                   </label>
 
                   <label>
                     Dirección
+
                     <input
                       name="address"
-                      value={createForm.address}
-                      onChange={handleCreateChange}
+                      value={
+                        createForm.address
+                      }
+                      onChange={
+                        handleCreateChange
+                      }
                     />
                   </label>
                 </div>
