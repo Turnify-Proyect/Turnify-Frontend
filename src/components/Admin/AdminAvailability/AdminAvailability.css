@@ -1,0 +1,176 @@
+.availability-toolbar {
+  justify-content: space-between;
+}
+
+.availability-professional-select {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.availability-professional-select label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.availability-empty-state {
+  padding: 50px 24px;
+  text-align: center;
+}
+
+.availability-empty-state h2 {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+
+.availability-empty-state p {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 14px;
+}
+
+.availability-loading {
+  padding: 24px;
+}
+
+.availability-week {
+  display: flex;
+  flex-direction: column;
+}
+
+.availability-day {
+  display: grid;
+  grid-template-columns: 130px 1fr;
+  min-height: 72px;
+
+  border-bottom: 1px solid var(--border);
+}
+
+.availability-day:last-child {
+  border-bottom: none;
+}
+
+.availability-day-name {
+  display: flex;
+  align-items: center;
+
+  padding: 16px 20px;
+
+  border-right: 1px solid var(--border);
+
+  font-size: 14px;
+}
+
+.availability-day-slots {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+
+  padding: 14px 18px;
+}
+
+.availability-slot {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  padding: 8px 11px;
+
+  border: 1px solid var(--border);
+  border-radius: 8px;
+
+  background: var(--card);
+  color: var(--foreground);
+
+  font-family: inherit;
+  cursor: pointer;
+
+  transition: 0.15s ease;
+}
+
+.availability-slot:hover {
+  border-color: var(--primary);
+}
+
+.availability-slot small {
+  margin-left: 5px;
+
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.availability-no-slots {
+  font-size: 13px;
+  color: var(--muted-foreground);
+}
+
+.availability-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.availability-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.availability-form select,
+.availability-form input {
+  width: 100%;
+  box-sizing: border-box;
+
+  padding: 10px 12px;
+
+  border: 1px solid var(--border);
+  border-radius: 9px;
+
+  background: var(--card);
+  color: var(--foreground);
+
+  font-family: inherit;
+  font-size: 14px;
+
+  outline: none;
+}
+
+.availability-form select:focus,
+.availability-form input:focus {
+  border-color: var(--primary);
+}
+
+.availability-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 700px) {
+  .availability-toolbar {
+    align-items: stretch;
+  }
+
+  .availability-professional-select {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .availability-day {
+    grid-template-columns: 1fr;
+  }
+
+  .availability-day-name {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .availability-form-row {
+    grid-template-columns: 1fr;
+  }
+}

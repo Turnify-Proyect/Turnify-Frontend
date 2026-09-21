@@ -7,7 +7,12 @@ import "./ClientDashboard.css";
 const API_URL = import.meta.env.VITE_API_URL;
 
 function ClientDashboard() {
-  const { token } = useAuth();
+  const { token, logout  } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
 
   const navigate = useNavigate();
 
@@ -25,7 +30,7 @@ function ClientDashboard() {
 
   const [appointments, setAppointments] = useState([]);
 
-  const [loading, setLoading] = useState(Boolean(token));
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -75,6 +80,8 @@ function ClientDashboard() {
 
     if (token) {
       fetchDashboardData();
+    } else {
+      setLoading(false);
     }
   }, [token]);
 
@@ -95,17 +102,11 @@ function ClientDashboard() {
 
   const getStatusLabel = (status) => {
     const labels = {
-      paid: "Pagado",
       pending: "Pendiente",
-    };
-
-    return labels[status] ?? status;
-  };
-
-  const getPaymentStatusLabel = (status) => {
-    const labels = {
-      paid: "Pagado",
-      pending: "Pendiente",
+      confirmed: "Confirmado",
+      cancelled: "Cancelado",
+      completed: "Completado",
+      expired: "Expirado",
     };
 
     return labels[status] ?? status;
@@ -146,6 +147,8 @@ function ClientDashboard() {
            errorData.message || "No se pudo actualizar el perfil"
          );
        }   
+
+       const updatedUser = await response.json();  
 
        setProfile((currentProfile) => ({
          ...currentProfile,
@@ -293,42 +296,33 @@ function ClientDashboard() {
                     </div>
                   </div>
 
-                 <div className="appointment-actions">
-  <span
-    className={`status-badge ${appointment.status}`}
-  >
-    {getStatusLabel(appointment.status)}
-  </span>
+                  <div className="appointment-actions">
+                    <span
+                      className={`status-badge ${appointment.status}`}
+                    >
+                      {getStatusLabel(appointment.status)}
+                    </span>
 
-  {appointment.paymentStatus && (
-    <span className={`payment-badge ${appointment.paymentStatus}`}>
-      {getPaymentStatusLabel(appointment.paymentStatus)}
-      {appointment.paymentStatus === "paid" && appointment.depositAmount
-        ? ` ($${Number(appointment.depositAmount).toLocaleString("es-AR")})`
-        : ""}
-    </span>
-  )}
+                    {(appointment.status === "confirmed" ||
+                      appointment.status === "pending") && (
+                      <>
+                        <button className="cancel-button" onClick={() => handleCancelAppointment(appointment.id)}>
+                          Cancelar
+                        </button>
 
-  {(appointment.status === "confirmed" ||
-    appointment.status === "pending") && (
-    <>
-      <button className="cancel-button" onClick={() => handleCancelAppointment(appointment.id)}>
-        Cancelar
-      </button>
-
-      <button className="reschedule-button" onClick={() => navigate("/booking", {
-            state: {
-              mode: "reschedule",
-              appointmentId: appointment.id,
-            },
-          })
-        }
-      >
-        Reprogramar
-      </button>
-    </>
-  )}
-</div>
+                        <button className="reschedule-button" onClick={() => navigate("/booking", {
+                              state: {
+                                mode: "reschedule",
+                                appointmentId: appointment.id,
+                              },
+                            })
+                          }
+                        >
+                          Reprogramar
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </article>
               ))
             )}

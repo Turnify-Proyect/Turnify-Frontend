@@ -11,10 +11,6 @@ import ServiceDetail from "./Views/Services/ServiceDetail";
 import About from "./Views/About/About";
 import Contact from "./Views/Contact/Contact";
 import AdminDashboard from "./Views/Admin/AdminDashboard";
-import Checkout from "./Views/Checkout/Checkout";
-import PaymentSuccess from "./Views/Payment/PaymentSuccess";
-import PaymentFailure from "./Views/Payment/PaymentFailure";
-import PaymentPending from "./Views/Payment/PaymentPending";
 
 import "./App.css";
 
@@ -32,10 +28,6 @@ function App() {
       <Route path="/dashboard" element={<ProtectedRoute> <ClientDashboard /> </ProtectedRoute>}/>
       <Route path="/booking" element={<ProtectedRoute> <BookingPage /></ProtectedRoute>}/>
       <Route path="/admin" element={<ProtectedRoute allowedRoles={["admin"]}><AdminDashboard /></ProtectedRoute>}/>
-      <Route path="/checkout" element={<ProtectedRoute> <Checkout /></ProtectedRoute>}/>
-      <Route path="/payment/success" element={<PaymentSuccess />} />
-      <Route path="/payment/failure" element={<PaymentFailure />} />
-      <Route path="/payment/pending" element={<PaymentPending />} />
     </Routes>
     <Chatbot />
     </>

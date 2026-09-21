@@ -162,23 +162,6 @@
   font-weight: 700;
 }
 
-.payment-badge {
-  font-size: 0.75rem;
-  font-weight: 600;
-  padding: 0.25rem 0.6rem;
-  border-radius: 0.5rem;
-}
-
-.payment-badge.paid {
-  background-color: #eef2ef;
-  color: #4a5a51;
-}
-
-.payment-badge.pending {
-  background-color: #fff8e6;
-  color: #92600a;
-}
-
 .status-badge.confirmed {
   background: #eef2ef;
   color: #567565;

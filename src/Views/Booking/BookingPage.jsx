@@ -8,10 +8,12 @@ function BookingPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const isRescheduling = location.state?.mode === "reschedule";
+  const appointmentId = location.state?.appointmentId;
   const preselectedServiceId = location.state?.serviceId;
   const [professionals, setProfessionals] = useState([]);
   const [services, setServices] = useState([]);
   const [availabilities, setAvailabilities] = useState([]);
+  const [showPaymentMessage, setShowPaymentMessage] = useState(false);
   const API_URL = import.meta.env.VITE_API_URL;
 
   const { token } = useAuth();
@@ -191,18 +193,9 @@ function BookingPage() {
     setStep((prev) => prev - 1);
   }
 
-  function handleConfirm() {
-    navigate("/checkout", {
-      state: {
-        serviceName: selectedService?.name,
-        professionalName: selectedProfessional?.professional?.user?.name,
-        date: selected.date,
-        time: selected.time,
-        totalPrice: selectedService?.price || 0,
-        deposit,
-      },
-    });
-  }
+ function handleConfirm() {
+  setShowPaymentMessage(true);
+}
 
   return (
     <>
@@ -504,6 +497,12 @@ function BookingPage() {
                   </p>
                 </div>
               </div>
+            )}
+
+            {showPaymentMessage && (
+                <div className="bookingPendingMessage">
+                    🚧 La funcionalidad de pago de seña aún no está implementada.
+                </div>
             )}
 
             <div className="bookingNavigation">
