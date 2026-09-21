@@ -264,3 +264,8 @@
   font-size: 0.8rem;
   color: #6c757d;
 }
+
+.StripeElement {
+  width: 100% !important;
+  display: block !important;
+}

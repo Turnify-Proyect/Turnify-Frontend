@@ -193,9 +193,37 @@ function BookingPage() {
     setStep((prev) => prev - 1);
   }
 
- function handleConfirm() {
+function handleConfirm(orderCreatedByBackend) {
+  console.log("Datos recibidos en handleConfirm:", orderCreatedByBackend);
   setShowPaymentMessage(true);
+
+  // 1. Si viene el objeto real del backend, extrae su order_id (o id). 
+  // 2. Si viene vacío o es un evento, usa el UUID que ya guardamos en PostgreSQL para la demo.
+  const idDeLaOrden = orderCreatedByBackend?.order_id || 
+                      orderCreatedByBackend?.id || 
+                      'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'; 
+
+  // Si el objeto del backend existe, se lo pasamos en el state. Si no, mandamos un objeto simulado.
+  const datosNavegacion = orderCreatedByBackend && !orderCreatedByBackend.nativeEvent 
+    ? orderCreatedByBackend 
+    : {
+        orderId: idDeLaOrden,
+        serviceName: "Corte de Pelo + Barba",
+        professionalName: "Leandro Bock",
+        date: "2026-10-25",
+        time: "14:30",
+        totalPrice: 5000,
+        deposit: 1500
+      };
+
+  console.log("🚀 NAVEGANDO AL CHECKOUT CON ID:", idDeLaOrden);
+
+  navigate(`/checkout/${idDeLaOrden}`, { 
+    state: datosNavegacion
+  }); 
 }
+
+
 
   return (
     <>
@@ -515,28 +543,22 @@ function BookingPage() {
               </button>
 
               {step < 4 ? (
-                <button
-                  type="button"
-                  className="bookingNextButton"
-                  onClick={handleNext}
-                  disabled={
-                    (step === 1 && !selected.service) ||
-                    (step === 2 &&
-                      !selected.professional) ||
-                    (step === 3 &&
-                      (!selected.date ||
-                        !selected.time))
-                  }
-                >
-                  Continuar →
-                </button>
-              ) : (
-                <button type="button" className="bookingPayButton" onClick={handleConfirm}>
-                  {isRescheduling
-                    ? "Confirmar reprogramación"
-                    : "💳 Pagar Seña"}
-                </button>
-              )}
+  <button 
+    type="button" 
+    className="bookingNextButton" 
+    onClick={handleNext}
+  >
+    Siguiente
+  </button>
+) : (
+  <button 
+    type="button" 
+    className="bookingPayButton" 
+    onClick={() => handleConfirm()}
+  >
+    Pagar seña
+  </button>
+)}
             </div>
 
           </section>
