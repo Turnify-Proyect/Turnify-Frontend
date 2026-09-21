@@ -9,7 +9,7 @@ import AdminProfessionals from "../../components/Admin/AdminProfessionals/AdminP
 import AdminUsers from "../../components/Admin/AdminUsers/AdminUsers";
 import AdminClients from "../../components/Admin/AdminClients/AdminClients";
 import AdminServices from "../../components/Admin/AdminServices/AdminServices";
-import AdminAvailability from "../../components/Admin/AdminAvailability/AdminAvailabitily";
+import AdminAvailability from "../../components/Admin/AdminAvailability/AdminAvailability";
 
 const AdminDashboard = () => {
   const [section, setSection] = useState("overview");
