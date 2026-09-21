@@ -7,12 +7,7 @@ import "./ClientDashboard.css";
 const API_URL = import.meta.env.VITE_API_URL;
 
 function ClientDashboard() {
-  const { token, logout  } = useAuth();
-
-  const handleLogout = () => {
-    logout();
-    navigate("/");
-  };
+  const { token } = useAuth();
 
   const navigate = useNavigate();
 
@@ -30,7 +25,7 @@ function ClientDashboard() {
 
   const [appointments, setAppointments] = useState([]);
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(Boolean(token));
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -80,8 +75,6 @@ function ClientDashboard() {
 
     if (token) {
       fetchDashboardData();
-    } else {
-      setLoading(false);
     }
   }, [token]);
 
@@ -153,8 +146,6 @@ function ClientDashboard() {
            errorData.message || "No se pudo actualizar el perfil"
          );
        }   
-
-       const updatedUser = await response.json();  
 
        setProfile((currentProfile) => ({
          ...currentProfile,

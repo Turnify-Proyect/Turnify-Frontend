@@ -8,7 +8,6 @@ function BookingPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const isRescheduling = location.state?.mode === "reschedule";
-  const appointmentId = location.state?.appointmentId;
   const preselectedServiceId = location.state?.serviceId;
   const [professionals, setProfessionals] = useState([]);
   const [services, setServices] = useState([]);
