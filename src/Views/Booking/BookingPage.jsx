@@ -227,28 +227,82 @@ function BookingPage() {
     "17:00",
   ]; 
 
-  const availableTimes = selected.date
-  ? times.filter((time) => {
-      const selectedDate = new Date(`${selected.date}T12:00:00`);
-      const dayOfWeek = dayNames[selectedDate.getDay()];
-
-      const availability = availabilities.find(
-        (item) => item.dayOfWeek === dayOfWeek
-      );
-
-      if (!availability) return false;
-
-      const startTime = availability.startTime.slice(0, 5);
-      const endTime = availability.endTime.slice(0, 5);
-
-      return time >= startTime && time < endTime;
-    })
-  : [];
-
-
   const selectedService = services.find(
   (service) => service.id === selected.service
   );
+
+  const availableTimes =
+  selected.date && selectedService
+    ? times.filter((time) => {
+        const selectedDate = new Date(`${selected.date}T12:00:00`);
+        const dayOfWeek = dayNames[selectedDate.getDay()];
+
+        const availability = availabilities.find(
+          (item) => item.dayOfWeek === dayOfWeek
+        );
+
+        if (!availability) return false;
+
+
+        const proposedStart = new Date(
+          `${selected.date}T${time}:00`
+        );
+
+        const proposedEnd = new Date(proposedStart);
+        proposedEnd.setMinutes(
+          proposedEnd.getMinutes() + selectedService.durationMinutes
+        );
+
+        const availabilityEnd = new Date(
+          `${selected.date}T${availability.endTime}`
+        );
+
+        // El servicio completo debe entrar dentro de la disponibilidad
+        if (proposedEnd > availabilityEnd) {
+          return false;
+        }
+
+        const now = new Date();
+
+        const hasOverlap = professionalAppointments.some(
+          (appointment) => {
+            // Al reprogramar, no debe bloquearse contra sí mismo
+            if (
+              isRescheduling &&
+              appointment.id === appointmentId
+            ) {
+              return false;
+            }
+
+            const blocksSlot =
+              appointment.status === "confirmed" ||
+              (appointment.status === "pending" &&
+                appointment.expiresAt &&
+                new Date(appointment.expiresAt) > now);
+
+            if (!blocksSlot) {
+              return false;
+            }
+
+            const appointmentStart = new Date(
+              appointment.startAt
+            );
+            const appointmentEnd = new Date(
+              appointment.endAt
+            );
+
+            return (
+              proposedStart < appointmentEnd &&
+              proposedEnd > appointmentStart
+            );
+          }
+        );
+
+        return !hasOverlap;
+      })
+    : [];
+
+  
 
   const selectedProfessional = professionals.find(
   (item) => item.professionalId === selected.professional
