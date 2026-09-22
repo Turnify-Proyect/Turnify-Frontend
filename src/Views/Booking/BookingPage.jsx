@@ -14,6 +14,7 @@ function BookingPage() {
   const [services, setServices] = useState([]);
   const [availabilities, setAvailabilities] = useState([]);
   const [bookingError, setBookingError] = useState("");
+  const [professionalAppointments, setProfessionalAppointments] = useState([]);
   const API_URL = import.meta.env.VITE_API_URL;
 
   const { token } = useAuth();
@@ -90,42 +91,42 @@ function BookingPage() {
     }, [selected.service]);
   
   
-    useEffect(() => {
-    const getAvailabilities = async () => {
-      if (!selected.professional || !token) {
-        setAvailabilities([]);
-        return;
-      }
-    
-      try {
-        const response = await fetch(
-          `${API_URL}/availability/professional/${selected.professional}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-      
-        if (!response.ok) {
-          throw new Error(
-            "No se pudo obtener la disponibilidad del profesional"
-          );
-        }
-      
-        const data = await response.json();
-      
-        console.log("Disponibilidades:", data);
-      
-        setAvailabilities(data);
-      } catch (error) {
-        console.error(error);
-        setAvailabilities([]);
-      }
-    };
-  
-    getAvailabilities();
-  }, [selected.professional, token]);
+  //  useEffect(() => {
+  //  const getAvailabilities = async () => {
+  //    if (!selected.professional || !token) {
+  //      setAvailabilities([]);
+  //      return;
+  //    }
+  //  
+  //    try {
+  //      const response = await fetch(
+  //        `${API_URL}/availability/professional/${selected.professional}`,
+  //        {
+  //          headers: {
+  //            Authorization: `Bearer ${token}`,
+  //          },
+  //        }
+  //      );
+  //    
+  //      if (!response.ok) {
+  //        throw new Error(
+  //          "No se pudo obtener la disponibilidad del profesional"
+  //        );
+  //      }
+  //    
+  //      const data = await response.json();
+  //    
+  //      console.log("Disponibilidades:", data);
+  //    
+  //      setAvailabilities(data);
+  //    } catch (error) {
+  //      console.error(error);
+  //      setAvailabilities([]);
+  //    }
+  //  };
+//  
+  //  getAvailabilities();
+  //}, [selected.professional, token])//;
 
     const dayNames = [
     "sunday",
@@ -135,20 +136,80 @@ function BookingPage() {
     "thursday",
     "friday",
     "saturday",
-  ];
+  ]//;
 
   const days = Array.from({ length: 14 }, (_, index) => {
     const date = new Date();
     date.setDate(date.getDate() + index + 1);
     return date;
   }).filter((date) => {
-    const dayOfWeek = dayNames[date.getDay()];
-
+    const dayOfWeek = dayNames[date.getDay()]//
     return availabilities.some(
       (availability) =>
         availability.dayOfWeek === dayOfWeek
     );
   });
+
+  useEffect(() => {
+  const getProfessionalData = async () => {
+    if (!selected.professional || !token) {
+      setAvailabilities([]);
+      setProfessionalAppointments([]);
+      return;
+    }
+
+    try {
+      const [availabilityResponse, appointmentsResponse] =
+        await Promise.all([
+          fetch(
+            `${API_URL}/availability/professional/${selected.professional}`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          ),
+
+          fetch(
+            `${API_URL}/appointments/professional/${selected.professional}`
+          ),
+        ]);
+
+      if (!availabilityResponse.ok) {
+        throw new Error(
+          "No se pudo obtener la disponibilidad del profesional"
+        );
+      }
+
+      if (!appointmentsResponse.ok) {
+        throw new Error(
+          "No se pudieron obtener los turnos del profesional"
+        );
+      }
+
+      const availabilityData =
+        await availabilityResponse.json();
+
+      const appointmentsData =
+        await appointmentsResponse.json();
+
+      console.log("Disponibilidades:", availabilityData);
+      console.log(
+        "Turnos del profesional:",
+        appointmentsData
+      );
+
+      setAvailabilities(availabilityData);
+      setProfessionalAppointments(appointmentsData);
+    } catch (error) {
+      console.error(error);
+      setAvailabilities([]);
+      setProfessionalAppointments([]);
+    }
+  };
+
+  getProfessionalData();
+}, [selected.professional, token]);
       
 
   const times = [
@@ -202,6 +263,11 @@ const allBookingItems = [
   ...bookingItems,
   ...(currentBookingItem ? [currentBookingItem] : []),
 ];
+
+console.log("bookingItems:", bookingItems);
+console.log("currentBookingItem:", currentBookingItem);
+console.log("allBookingItems:", allBookingItems);
+console.log("selected:", selected);
 
 const bookingTotal = allBookingItems.reduce(
   (total, item) => total + item.price,
@@ -337,6 +403,7 @@ async function handleConfirm() {
 
   try {
     setBookingError("");
+
     const response = await fetch(`${API_URL}/orders`, {
       method: "POST",
       headers: {
@@ -362,16 +429,15 @@ async function handleConfirm() {
     }
 
     const totalPrice = Number(
-      order.orderDetails?.total_price ??
-        bookingTotal
+      order.totalPrice ?? bookingTotal
     );
 
     const orderDeposit =
       Math.round(totalPrice * 0.3 * 100) / 100;
 
-    navigate(`/checkout/${order.order_id}`, {
+    navigate(`/checkout/${order.orderId}`, {
       state: {
-        orderId: order.order_id,
+        orderId: order.orderId,
 
         appointments: allBookingItems,
 
