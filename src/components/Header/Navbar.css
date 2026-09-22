@@ -1,0 +1,119 @@
+.header {
+  width: 100%;
+  background-color: var(--card);
+  border-bottom: 1px solid var(--border);
+}
+
+.navbar-container {
+  max-width: 1152px;
+  height: 64px;
+  margin: 0 auto;
+  padding: 0 20px;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.navbar-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  font-family: "DM Serif Display", serif;
+  font-size: 22px;
+  color: var(--foreground);
+  text-decoration: none;
+}
+
+
+.navbar-logo-icon {
+  width: 32px;
+  height: 32px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  border-radius: 8px;
+
+  font-family: "Nunito", sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.navbar-links {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.navbar-links a {
+  color: var(--muted-foreground);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.navbar-links a:hover {
+  color: var(--primary);
+}
+
+.navbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.navbar-login,
+.navbar-register {
+  padding: 9px 16px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  color: var(--muted-foreground);
+  background: transparent;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.navbar-login:hover,
+.navbar-register:hover {
+  color: var(--primary);
+}
+
+/* Página actual */
+.navbar-login.active,
+.navbar-register.active {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+}
+
+.navbar-login.active:hover,
+.navbar-register.active:hover {
+  background-color: #5a7a69;
+  color: var(--primary-foreground);
+}
+
+.navbar-logout {
+  padding: 9px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background-color: transparent;
+  color: var(--muted-foreground);
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.navbar-logout:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background-color: var(--secondary);
+}

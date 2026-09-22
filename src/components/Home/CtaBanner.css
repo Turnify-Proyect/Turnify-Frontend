@@ -1,0 +1,52 @@
+.cta-banner {
+  padding: 64px 0;
+  background-color: var(--primary);
+}
+
+.cta-banner-container {
+  max-width: 1152px;
+  margin: 0 auto;
+  padding: 0 20px;
+  text-align: center;
+}
+
+.cta-banner h2 {
+  margin: 0 0 16px;
+  color: white;
+  font-family: "DM Serif Display", serif;
+  font-size: 36px;
+  font-weight: 400;
+}
+
+.cta-banner p {
+  margin: 0 0 32px;
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 16px;
+}
+
+.cta-banner-button {
+  padding: 16px 40px;
+  border: none;
+  border-radius: 12px;
+  background-color: var(--accent);
+  color: white;
+  font-family: "Nunito", sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.cta-banner-button:hover {
+  background-color: #d9956a;
+}
+
+@media (max-width: 640px) {
+  .cta-banner {
+    padding: 56px 0;
+  }
+
+  .cta-banner h2 {
+    font-size: 32px;
+  }
+}

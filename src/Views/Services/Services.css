@@ -1,0 +1,86 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Nunito:wght@300;400;500;600;700;800&display=swap");
+
+.services-page {
+  min-height: 100vh;
+  background-color: #f8f7f4;
+}
+
+.services-container {
+  max-width: 1152px;
+  margin: 0 auto;
+  padding: 56px 20px;
+}
+
+.services-header {
+  margin-bottom: 40px;
+}
+
+.services-label {
+  margin: 0 0 8px;
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.services-header h1 {
+  margin: 0;
+  color: #333333;
+  font-family: "DM Serif Display", serif;
+  font-size: 36px;
+  font-weight: 400;
+}
+
+.services-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 40px;
+}
+
+.filter-button {
+  padding: 8px 16px;
+  border: 1px solid #e5e0d8;
+  border-radius: 999px;
+  background-color: #ffffff;
+  color: #6c757d;
+  font-family: "Nunito", sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-button:hover {
+  border-color: #6b8e7b;
+  color: #6b8e7b;
+}
+
+.filter-button.active {
+  background-color: var(--primary);
+  border-color: #6b8e7b;
+  color: #ffffff;
+}
+
+.services-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+}
+
+@media (max-width: 1024px) {
+  .services-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 640px) {
+  .services-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .services-container {
+    padding: 40px 20px;
+  }
+}

@@ -1,0 +1,111 @@
+.payment-result-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f8f7f4;
+  padding: 2rem 1rem;
+}
+
+.payment-result-card {
+  background-color: #ffffff;
+  border: 1px solid #e5e0d8;
+  border-radius: 12px;
+  padding: 2.5rem;
+  max-width: 420px;
+  width: 100%;
+  text-align: center;
+}
+
+.payment-result-icon {
+  width: 4rem;
+  height: 4rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 auto 1.5rem;
+}
+
+.payment-result-icon.success {
+  background-color: #6b8e7b;
+}
+
+.payment-result-icon.pending {
+  background-color: #e8a87c;
+}
+
+.payment-result-icon.failure {
+  background-color: #e05a5a;
+}
+
+.payment-result-title {
+  margin: 0 0 0.75rem;
+  font-size: 1.5rem;
+  color: #333333;
+}
+
+.payment-result-message {
+  margin: 0 0 1.5rem;
+  color: #6c757d;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.payment-result-summary {
+  background-color: #f8f7f4;
+  border-radius: 0.75rem;
+  padding: 1rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 1.5rem;
+  text-align: left;
+}
+
+.payment-result-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  color: #333333;
+}
+
+.payment-result-row span {
+  color: #6c757d;
+}
+
+.payment-result-primary-button {
+  width: 100%;
+  padding: 0.875rem;
+  background-color: #6b8e7b;
+  color: #ffffff;
+  font-weight: 700;
+  border: none;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  font-size: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.payment-result-primary-button:hover {
+  background-color: #5a7a69;
+}
+
+.payment-result-secondary-button {
+  width: 100%;
+  padding: 0.875rem;
+  background-color: transparent;
+  color: #6c757d;
+  font-weight: 600;
+  border: 1px solid #e5e0d8;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  font-size: 0.95rem;
+}
+
+.payment-result-secondary-button:hover {
+  background-color: #f8f7f4;
+}

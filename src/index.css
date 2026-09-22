@@ -1,0 +1,72 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Nunito:wght@300;400;500;600;700;800&display=swap");
+
+:root {
+  --background: #f8f7f4;
+  --foreground: #333333;
+
+  --card: #ffffff;
+  --card-foreground: #333333;
+
+  --primary: #6b8e7b;
+  --primary-foreground: #ffffff;
+
+  --secondary: #eef2ef;
+  --secondary-foreground: #4a5a51;
+
+  --muted: #f0ede8;
+  --muted-foreground: #6c757d;
+
+  --accent: #e8a87c;
+  --accent-foreground: #ffffff;
+
+  --border: #e5e0d8;
+  --ring: #6b8e7b;
+
+  --radius: 12px;
+
+  --sans: "Nunito", system-ui, "Segoe UI", Roboto, sans-serif;
+  --heading: "DM Serif Display", Georgia, serif;
+  --mono: ui-monospace, Consolas, monospace;
+
+  color: var(--foreground);
+  background: var(--background);
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100%;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+}
+
+body {
+  font-family: var(--sans);
+  background-color: var(--background);
+  color: var(--foreground);
+  -webkit-font-smoothing: antialiased;
+}
+
+.font-display {
+  font-family: var(--heading);
+}
+
+button,
+a {
+  transition: all 0.2s ease;
+}
