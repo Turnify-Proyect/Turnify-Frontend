@@ -13,7 +13,7 @@ function BookingPage() {
   const [professionals, setProfessionals] = useState([]);
   const [services, setServices] = useState([]);
   const [availabilities, setAvailabilities] = useState([]);
-  const [showPaymentMessage, setShowPaymentMessage] = useState(false);
+  const [bookingError, setBookingError] = useState("");
   const API_URL = import.meta.env.VITE_API_URL;
 
   const { token } = useAuth();
@@ -35,6 +35,8 @@ function BookingPage() {
     date: "",
     time: "",
   });
+
+  const [bookingItems, setBookingItems] = useState([]);
 
   
 
@@ -174,9 +176,40 @@ function BookingPage() {
   (item) => item.professionalId === selected.professional
   );
 
-  const deposit = selectedService
-    ? Math.round(selectedService.price * 0.3)
-    : 0;
+  const currentBookingItem =
+  selectedService &&
+  selectedProfessional &&
+  selected.date &&
+  selected.time
+    ? {
+        serviceId: selected.service,
+        serviceName: selectedService.name,
+        price: Number(selectedService.price),
+
+        professionalId: selected.professional,
+        professionalName:
+          selectedProfessional.professional?.user?.name ||
+          "Profesional",
+
+        date: selected.date,
+        time: selected.time,
+
+        startAt: `${selected.date}T${selected.time}:00`,
+      }
+    : null;
+
+const allBookingItems = [
+  ...bookingItems,
+  ...(currentBookingItem ? [currentBookingItem] : []),
+];
+
+const bookingTotal = allBookingItems.reduce(
+  (total, item) => total + item.price,
+  0
+);
+
+const deposit =
+  Math.round(bookingTotal * 0.3 * 100) / 100;
 
   function handleNext() {
     if (step < 4) {
@@ -193,37 +226,188 @@ function BookingPage() {
     setStep((prev) => prev - 1);
   }
 
-function handleConfirm(orderCreatedByBackend) {
-  console.log("Datos recibidos en handleConfirm:", orderCreatedByBackend);
-  setShowPaymentMessage(true);
+  function handleAddAnotherAppointment() {
+  if (!currentBookingItem) {
+    return;
+  }
 
-  // 1. Si viene el objeto real del backend, extrae su order_id (o id). 
-  // 2. Si viene vacío o es un evento, usa el UUID que ya guardamos en PostgreSQL para la demo.
-  const idDeLaOrden = orderCreatedByBackend?.order_id || 
-                      orderCreatedByBackend?.id || 
-                      'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11'; 
+  setBookingError("");
 
-  // Si el objeto del backend existe, se lo pasamos en el state. Si no, mandamos un objeto simulado.
-  const datosNavegacion = orderCreatedByBackend && !orderCreatedByBackend.nativeEvent 
-    ? orderCreatedByBackend 
-    : {
-        orderId: idDeLaOrden,
-        serviceName: "Corte de Pelo + Barba",
-        professionalName: "Leandro Bock",
-        date: "2026-10-25",
-        time: "14:30",
-        totalPrice: 5000,
-        deposit: 1500
-      };
+  setBookingItems((prev) => [
+    ...prev,
+    currentBookingItem,
+  ]);
 
-  console.log("🚀 NAVEGANDO AL CHECKOUT CON ID:", idDeLaOrden);
+  setSelected({
+    service: "",
+    professional: "",
+    date: "",
+    time: "",
+  });
 
-  navigate(`/checkout/${idDeLaOrden}`, { 
-    state: datosNavegacion
-  }); 
+  setProfessionals([]);
+  setAvailabilities([]);
+
+  setStep(1);
 }
 
+function handleRemoveBookingItem(index) {
+  setBookingError("");
 
+  const remainingItems = allBookingItems.filter(
+    (_, itemIndex) => itemIndex !== index
+  );
+
+  // Si eliminó todos los turnos, recién ahí volvemos al inicio
+  if (remainingItems.length === 0) {
+    setBookingItems([]);
+
+    setSelected({
+      service: "",
+      professional: "",
+      date: "",
+      time: "",
+    });
+
+    setProfessionals([]);
+    setAvailabilities([]);
+
+    setStep(1);
+    return;
+  }
+
+  // Tomamos el último turno restante como turno actual
+  const lastItem =
+    remainingItems[remainingItems.length - 1];
+
+  // Los anteriores quedan guardados
+  setBookingItems(remainingItems.slice(0, -1));
+
+  // El último queda como turno actual
+  setSelected({
+    service: lastItem.serviceId,
+    professional: lastItem.professionalId,
+    date: lastItem.date,
+    time: lastItem.time,
+  });
+
+  setStep(4);
+}
+
+async function handleConfirm() {
+  if (!currentBookingItem) {
+    return;
+  }
+
+  // REPROGRAMACIÓN
+  if (isRescheduling) {
+    try {
+      const response = await fetch(
+        `${API_URL}/appointments/${appointmentId}/reschedule`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            professionalId: selected.professional,
+            serviceId: selected.service,
+            startAt: currentBookingItem.startAt,
+          }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message ||
+            "No se pudo reprogramar el turno"
+        );
+      }
+
+      navigate("/dashboard");
+    } catch (error) {
+      console.error(error);
+    }
+
+    return;
+  }
+
+  try {
+    setBookingError("");
+    const response = await fetch(`${API_URL}/orders`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+
+      body: JSON.stringify({
+        appointments: allBookingItems.map((item) => ({
+          professionalId: item.professionalId,
+          serviceId: item.serviceId,
+          startAt: item.startAt,
+        })),
+      }),
+    });
+
+    const order = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        order.message || "No se pudo crear la reserva"
+      );
+    }
+
+    const totalPrice = Number(
+      order.orderDetails?.total_price ??
+        bookingTotal
+    );
+
+    const orderDeposit =
+      Math.round(totalPrice * 0.3 * 100) / 100;
+
+    navigate(`/checkout/${order.order_id}`, {
+      state: {
+        orderId: order.order_id,
+
+        appointments: allBookingItems,
+
+        totalPrice,
+        deposit: orderDeposit,
+
+        // Compatibilidad temporal con Checkout actual
+        serviceName:
+          allBookingItems.length === 1
+            ? allBookingItems[0].serviceName
+            : `${allBookingItems.length} servicios`,
+
+        professionalName:
+          allBookingItems.length === 1
+            ? allBookingItems[0].professionalName
+            : "Varios profesionales",
+
+        date:
+          allBookingItems.length === 1
+            ? allBookingItems[0].date
+            : "",
+
+        time:
+          allBookingItems.length === 1
+            ? allBookingItems[0].time
+            : "",
+      },
+    });
+  } catch (error) {
+  console.error("Error creando la orden:", error);
+
+  setBookingError(
+    error.message ||
+      "No se pudo generar la reserva. Intentá nuevamente."
+  );
+}}
 
   return (
     <>
@@ -446,92 +630,187 @@ function handleConfirm(orderCreatedByBackend) {
             )}
 
             {step === 4 && (
-              <div>
-                <h1 className="bookingTitle">
-                  {isRescheduling
-                    ? "Confirmá la reprogramación"
-                    : "Confirmá tu reserva"}
-                </h1>
+  <div>
+    <h1 className="bookingTitle">
+      {isRescheduling
+        ? "Confirmá la reprogramación"
+        : "Confirmá tu reserva"}
+    </h1>
 
-                <div className="bookingSummary">
+    {isRescheduling ? (
+      <>
+        <div className="bookingSummary">
+          <div className="bookingSummaryRow">
+            <span>Servicio</span>
+            <strong>
+              {selectedService?.name || "—"}
+            </strong>
+          </div>
 
-                  <div className="bookingSummaryRow">
-                    <span>Servicio</span>
-                    <strong>
-                      {selectedService?.name || "—"}
-                    </strong>
-                  </div>
+          <div className="bookingSummaryRow">
+            <span>Profesional</span>
+            <strong>
+              {selectedProfessional?.professional?.user
+                ?.name || "—"}
+            </strong>
+          </div>
 
-                  <div className="bookingSummaryRow">
-                    <span>Profesional</span>
-                    <strong>
-                      {selectedProfessional?.professional?.user?.name || "—"}
+          <div className="bookingSummaryRow">
+            <span>Fecha</span>
+            <strong>
+              {selected.date
+                ? new Date(
+                    `${selected.date}T00:00:00`
+                  ).toLocaleDateString("es-AR", {
+                    weekday: "long",
+                    day: "numeric",
+                    month: "long",
+                  })
+                : "—"}
+            </strong>
+          </div>
+
+          <div className="bookingSummaryRow">
+            <span>Hora</span>
+            <strong>{selected.time || "—"}</strong>
+          </div>
+
+          <div className="bookingSummaryRow">
+            <span>Seña</span>
+            <strong>
+              Se mantiene la seña abonada
+            </strong>
+          </div>
+        </div>
+
+        <div className="bookingInfo">
+          <span>ℹ️</span>
+
+          <p>
+            La seña abonada en la reserva original
+            se mantiene y se aplicará al turno
+            reprogramado.
+          </p>
+        </div>
+      </>
+    ) : (
+      <>
+        <div className="bookingAppointmentsSummary">
+          {allBookingItems.map((item, index) => (
+            <div
+              className="bookingAppointmentItem"
+              key={`${item.serviceId}-${item.professionalId}-${item.date}-${item.time}-${index}`}
+            >
+              <div className="bookingAppointmentHeader">
+                <span className="bookingAppointmentNumber">
+                  Turno {index + 1}
+                </span>
+
+                <button
+                  type="button"
+                  className="bookingRemoveAppointment"
+                  onClick={() => handleRemoveBookingItem(index)}
+                >
+                  Eliminar
+                </button>
+                
+              </div>
+
+              <div className="bookingAppointmentContent">
+                <div>
+                  <strong className="bookingAppointmentService">
+                    {item.serviceName}
                   </strong>
-                  </div>
-
-                  <div className="bookingSummaryRow">
-                    <span>Fecha</span>
-                    <strong>
-                      {selected.date
-                        ? new Date(
-                            `${selected.date}T00:00:00`
-                          ).toLocaleDateString("es-AR", {
-                            weekday: "long",
-                            day: "numeric",
-                            month: "long",
-                          })
-                        : "—"}
-                    </strong>
-                  </div>
-
-                  <div className="bookingSummaryRow">
-                    <span>Hora</span>
-                    <strong>
-                      {selected.time || "—"}
-                    </strong>
-                  </div>
-
-                  <div className="bookingSummaryRow">
-                    <span>
-                      {isRescheduling ? "Seña" : "Seña (30%)"}
-                    </span>
-
-                    <strong>
-                      {isRescheduling
-                        ? "Se mantiene la seña abonada"
-                        : `$${deposit.toLocaleString("es-AR")}`}
-                    </strong>
-                  </div>
-                  
-
-                  <div className="bookingSummaryRow">
-                    <span>Total</span>
-                    <strong>
-                      $
-                      {selectedService?.price.toLocaleString(
-                        "es-AR"
-                      ) || 0}
-                    </strong>
-                  </div>
-                </div>
-
-                <div className="bookingInfo">
-                  <span>ℹ️</span>
 
                   <p>
-                    {isRescheduling
-                      ? "La seña abonada en la reserva original se mantiene y se aplicará al turno reprogramado."
-                      : "Se te cobrará una seña del 30% ahora. El resto se abona en el centro."}
+                    con {item.professionalName}
+                  </p>
+
+                  <p>
+                    {new Date(
+                      `${item.date}T00:00:00`
+                    ).toLocaleDateString("es-AR", {
+                      weekday: "long",
+                      day: "numeric",
+                      month: "long",
+                    })}{" "}
+                    · {item.time} hs
                   </p>
                 </div>
-              </div>
-            )}
 
-            {showPaymentMessage && (
-                <div className="bookingPendingMessage">
-                    🚧 La funcionalidad de pago de seña aún no está implementada.
-                </div>
-            )}
+                <strong className="bookingAppointmentPrice">
+                  $
+                  {item.price.toLocaleString(
+                    "es-AR"
+                  )}
+                </strong>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <button
+          type="button"
+          className="bookingAddAppointmentButton"
+          onClick={handleAddAnotherAppointment}
+        >
+          + Agregar otro turno
+        </button>
+
+        <div className="bookingSummary bookingOrderTotals">
+          <div className="bookingSummaryRow">
+            <span>Total</span>
+
+            <strong>
+              $
+              {bookingTotal.toLocaleString("es-AR")}
+            </strong>
+          </div>
+
+          <div className="bookingSummaryRow">
+            <span>Seña (30%)</span>
+
+            <strong>
+              ${deposit.toLocaleString("es-AR")}
+            </strong>
+          </div>
+
+          <div className="bookingSummaryRow">
+            <span>Saldo a abonar en el centro</span>
+
+            <strong>
+              $
+              {(bookingTotal - deposit).toLocaleString(
+                "es-AR"
+              )}
+            </strong>
+          </div>
+        </div>
+
+        <div className="bookingInfo">
+          <span>ℹ️</span>
+
+          <p>
+            La seña corresponde al 30% del total de
+            los turnos seleccionados. El saldo restante
+            se abona en el centro.
+          </p>
+        </div>
+      </>
+    )}
+  </div>
+)}
+
+    {step === 4 && bookingError && (
+      <div className="bookingErrorMessage">
+        <span className="bookingErrorIcon">!</span>
+    
+        <div>
+          <strong>No pudimos generar la reserva</strong>
+          <p>{bookingError}</p>
+        </div>
+      </div>
+    )}
 
             <div className="bookingNavigation">
               <button
@@ -543,21 +822,28 @@ function handleConfirm(orderCreatedByBackend) {
               </button>
 
               {step < 4 ? (
-  <button 
-    type="button" 
-    className="bookingNextButton" 
+  <button
+    type="button"
+    className="bookingNextButton"
     onClick={handleNext}
   >
     Siguiente
   </button>
 ) : (
-  <button 
-    type="button" 
-    className="bookingPayButton" 
-    onClick={() => handleConfirm()}
+  <button
+    type="button"
+    className="bookingPayButton"
+    onClick={handleConfirm}
   >
-    Pagar seña
+    {isRescheduling
+      ? "Confirmar reprogramación"
+      : `Pagar seña${
+          allBookingItems.length > 1
+            ? ` (${allBookingItems.length} turnos)`
+            : ""
+        }`}
   </button>
+
 )}
             </div>
 
