@@ -227,6 +227,23 @@ function BookingPage() {
     "17:00",
   ]; 
 
+  const availableTimes = selected.date
+  ? times.filter((time) => {
+      const selectedDate = new Date(`${selected.date}T12:00:00`);
+      const dayOfWeek = dayNames[selectedDate.getDay()];
+
+      const availability = availabilities.find(
+        (item) => item.dayOfWeek === dayOfWeek
+      );
+
+      if (!availability) return false;
+
+      const startTime = availability.startTime.slice(0, 5);
+      const endTime = availability.endTime.slice(0, 5);
+
+      return time >= startTime && time < endTime;
+    })
+  : [];
 
 
   const selectedService = services.find(
@@ -671,7 +688,7 @@ async function handleConfirm() {
                   </p>
 
                   <div className="bookingTimes">
-                    {times.map((time) => (
+                    {availableTimes.map((time) => (
                       <button
                         type="button"
                         key={time}
