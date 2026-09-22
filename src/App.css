@@ -4,3 +4,41 @@ body {
   background-color: #f8f7f4;
   color: #333333;
 }
+
+/* Custom Toastify Styles for Turnify Sage Green Theme */
+.Toastify__toast {
+  border-radius: 12px !important;
+  font-family: "Nunito", sans-serif !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05) !important;
+  font-size: 0.95rem !important;
+}
+
+.Toastify__toast--success {
+  background-color: #EBF5F0 !important;
+  color: #2D4739 !important;
+  border: 1px solid #C4E2D3 !important;
+}
+
+.Toastify__toast--success .Toastify__toast-icon svg {
+  fill: #3B584B !important;
+}
+
+.Toastify__progress-bar--success {
+  background: #3B584B !important;
+}
+
+.Toastify__toast--error {
+  background-color: #FDF2F2 !important;
+  color: #9B1C1C !important;
+  border: 1px solid #FBD5D5 !important;
+}
+
+.Toastify__progress-bar--error {
+  background: #C84B31 !important;
+}
+
+.Toastify__toast--info {
+  background-color: #F0F5F9 !important;
+  color: #1E3A8A !important;
+  border: 1px solid #D0E1FD !important;
+}

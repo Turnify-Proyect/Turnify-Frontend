@@ -17,11 +17,25 @@ import PaymentSuccess from "./Views/Payment/PaymentSuccess";
 import PaymentFailure from "./Views/Payment/PaymentFailure";
 import PaymentPending from "./Views/Payment/PaymentPending";
 
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import "./App.css";
 
 function App() {
   return (
     <>
+      <ToastContainer
+        position="top-right"
+        autoClose={3500}
+        hideProgressBar={false}
+        newestOnTop={true}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
