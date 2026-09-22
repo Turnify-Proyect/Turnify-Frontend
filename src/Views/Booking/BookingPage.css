@@ -459,3 +459,105 @@
   font-weight: 600;
   text-align: center;
 }
+
+.bookingAppointmentsSummary {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 22px;
+}
+
+.bookingAppointmentItem {
+  padding: 18px 0;
+  border-bottom: 1px solid #e9e9e9;
+}
+
+.bookingAppointmentHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.bookingAppointmentNumber {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.bookingRemoveAppointment {
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.bookingAppointmentContent {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.bookingAppointmentContent p {
+  margin: 5px 0 0;
+}
+
+.bookingAppointmentService {
+  display: block;
+  font-size: 17px;
+}
+
+.bookingAppointmentPrice {
+  white-space: nowrap;
+  font-size: 17px;
+}
+
+.bookingAddAppointmentButton {
+  width: 100%;
+  margin: 18px 0 24px;
+  padding: 14px;
+  border: 1px dashed #aaa;
+  border-radius: 10px;
+  background: transparent;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.bookingOrderTotals {
+  margin-top: 0;
+}
+
+.bookingErrorMessage {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 20px;
+  padding: 14px 16px;
+  border: 1px solid #e3b6b6;
+  border-radius: 10px;
+  background: #fff7f7;
+}
+
+.bookingErrorIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  font-weight: 700;
+}
+
+.bookingErrorMessage strong {
+  display: block;
+  margin-bottom: 3px;
+}
+
+.bookingErrorMessage p {
+  margin: 0;
+  font-size: 14px;
+}

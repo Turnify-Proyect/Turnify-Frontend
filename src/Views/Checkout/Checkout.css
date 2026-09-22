@@ -269,3 +269,127 @@
   width: 100% !important;
   display: block !important;
 }
+
+.checkout-cancel-button {
+  width: 100%;
+  margin-top: 12px;
+  padding: 13px 16px;
+  border: 1px solid #d8d8d8;
+  border-radius: 8px;
+  background: transparent;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.checkout-cancel-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.checkout-appointments {
+  display: flex;
+  flex-direction: column;
+}
+
+.checkout-appointment-item {
+  padding: 18px 0;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.checkout-appointment-item:first-child {
+  padding-top: 0;
+}
+
+.checkout-appointment-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.checkout-appointment-header span {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.checkout-appointment-service {
+  margin: 0 0 10px;
+  font-size: 17px;
+}
+
+.checkout-appointment-details {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.checkout-appointment-details p {
+  margin: 0;
+  font-size: 14px;
+}
+
+.checkout-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.checkout-cancel-button,
+.checkout-pay-button {
+  min-height: 44px;
+  padding: 0 22px;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    opacity 0.2s ease;
+}
+
+/* Acción secundaria */
+.checkout-cancel-button {
+  background: #fff;
+  border: 1px solid #ddd5ce;
+  color: #333;
+}
+
+.checkout-cancel-button:hover:not(:disabled) {
+  background: #f8f5f2;
+}
+
+/* Acción principal */
+.checkout-pay-button {
+  background: #eba16f;
+  border: 1px solid #eba16f;
+  color: #fff;
+}
+
+.checkout-pay-button:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.checkout-cancel-button:disabled,
+.checkout-pay-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+@media (max-width: 600px) {
+  .checkout-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .checkout-cancel-button,
+  .checkout-pay-button {
+    width: 100%;
+  }
+}

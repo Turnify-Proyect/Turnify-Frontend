@@ -13,6 +13,7 @@ import {
 
 const stripePromise = loadStripe(import.meta.env.VITE_NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY);
 const elementOptions = { style: { base: { fontSize: "16px" } } };
+const API_URL = import.meta.env.VITE_API_URL;
 
 function CheckoutForm() {
   const navigate = useNavigate();
@@ -20,14 +21,15 @@ function CheckoutForm() {
   const booking = location.state || {};
 
   const {
-    orderId = "",
-    serviceName = "Servicio",
-    professionalName = "—",
-    date = "",
-    time = "",
-    totalPrice = 0,
-    deposit = 0,
-  } = booking;
+  orderId = "",
+  appointments = [],
+  serviceName = "Servicio",
+  professionalName = "—",
+  date = "",
+  time = "",
+  totalPrice = 0,
+  deposit = 0,
+} = booking;
 
   const [cardHolderName, setCardHolderName] = useState("");
   const [error, setError] = useState("");
@@ -35,103 +37,127 @@ function CheckoutForm() {
   const stripe = useStripe();
   const elements = useElements();
 
-  const formattedDate = date
-    ? new Date(`${date}T00:00:00`).toLocaleDateString("es-AR", {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-      })
-    : "—";
+  function formatDate(dateValue) {
+  if (!dateValue) return "—";
+
+  return new Date(
+    `${dateValue}T00:00:00`
+  ).toLocaleDateString("es-AR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+}
 
     async function handleSubmit(e) {
-    e.preventDefault();
-    setError("");
+  e.preventDefault();
+  setError("");
 
-    if (!stripe || !elements) return;
+  if (!stripe || !elements) return;
 
-    if (!cardHolderName.trim()) {
-      setError("Ingresá el nombre del titular.");
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const token = localStorage.getItem("token");
-      const finalOrderId = orderId || booking.orderId || "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11";
-
-      let clientSecret = null;
-
-      try {
-        // 1. INTENTO NORMAL: Llamamos a tu backend en NestJS
-        const response = await fetch(
-          "http://localhost:3000/payments/stripe/create-intent",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({ orderId: finalOrderId }),
-          },
-        );
-        
-        if (response.ok) {
-          const data = await response.json();
-          clientSecret = data.clientSecret;
-        }
-      } catch (backendError) {
-        console.log("Usando modo de contingencia seguro para la entrega.");
-      }
-
-      // 💡 2. MODO RESCATE (Bypass de Emergencia): Si tu backend falló o dio 500, 
-      // generamos el token de pago directo con Stripe para destrabar tu interfaz
-      if (!clientSecret) {
-        const { token: stripeToken, error: tokenError } = await stripe.createToken(
-          elements.getElement(CardNumberElement),
-          { name: cardHolderName }
-        );
-
-        if (tokenError) {
-          throw new Error(tokenError.message);
-        }
-
-        console.log("✅ Token de Stripe generado de emergencia:", stripeToken.id);
-        // Simulamos el éxito total y saltamos directo a tu página de confirmación
-        setLoading(false);
-        navigate("/payment/success", { state: booking });
-        return;
-      }
-
-      // 3. FLUJO NORMAL SI EL BACKEND RESPONDIÓ BIEN:
-      const { error: stripeError, paymentIntent } =
-        await stripe.confirmCardPayment(clientSecret, {
-          payment_method: {
-            card: elements.getElement(CardNumberElement),
-            billing_details: { name: cardHolderName },
-          },
-        });
-
-      if (stripeError) {
-        if (stripeError.type === "validation_error") {
-          setError(stripeError.message);
-          return;
-        }
-        navigate("/payment/failure", { state: booking });
-        return;
-      }
-
-      navigate(
-        paymentIntent.status === "succeeded"
-          ? "/payment/success"
-          : "/payment/pending",
-        { state: booking },
-      );
-    } catch (err) {
-      setError(err.message || "Ocurrió un error al procesar el pago.");
-    } finally {
-      setLoading(false);
-    }
+  if (!cardHolderName.trim()) {
+    setError("Ingresá el nombre del titular.");
+    return;
   }
+
+  setLoading(true);
+
+  try {
+    const token = localStorage.getItem("token");
+
+    if (!orderId) {
+      throw new Error(
+        "No se encontró la orden asociada al pago."
+      );
+    }
+
+    const response = await fetch(
+       `${API_URL}/payments/stripe/create-intent`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          orderId,
+        }),
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.message ||
+          "No se pudo iniciar el pago."
+      );
+    }
+
+    if (!data.clientSecret) {
+      throw new Error(
+        "No se recibió la información necesaria para procesar el pago."
+      );
+    }
+
+    const { error: stripeError, paymentIntent } =
+      await stripe.confirmCardPayment(
+        data.clientSecret,
+        {
+          payment_method: {
+            card: elements.getElement(
+              CardNumberElement
+            ),
+            billing_details: {
+              name: cardHolderName,
+            },
+          },
+        }
+      );
+
+    //if (stripeError) {
+    //  if (
+    //    stripeError.type === "validation_error"
+    //  ) {
+    //    setError(stripeError.message);
+    //    return;
+    //  }
+
+    //  navigate("/payment/failure", {
+    //    state: booking,
+    //  });
+
+    //  return;
+    //}
+
+    if (stripeError) {
+  console.error("❌ ERROR STRIPE:", stripeError);
+
+  setError(
+    stripeError.message ||
+      "Stripe no pudo procesar el pago."
+  );
+
+  return;
+}
+
+    navigate(
+      paymentIntent.status === "succeeded"
+        ? "/payment/success"
+        : "/payment/pending",
+      {
+        state: booking,
+      }
+    );
+  } catch (err) {
+    setError(
+      err.message ||
+        "Ocurrió un error al procesar el pago."
+    );
+  } finally {
+    setLoading(false);
+  }
+}
 
 
   return (
@@ -212,6 +238,15 @@ function CheckoutForm() {
                 ? "Procesando..."
                 : `Pagar $${deposit.toLocaleString("es-AR")}`}
             </button>
+
+            <button
+            type="button"
+            className="checkout-cancel-button"
+            disabled={loading}
+                        onClick={() => navigate("/dashboard")}
+                      >
+                        Volver a Mis Turnos
+            </button>
           </form>
 
           <div className="checkout-security-row">
@@ -229,56 +264,133 @@ function CheckoutForm() {
         </section>
 
         <aside className="checkout-summary-card">
-          <div className="checkout-summary-header">
-            <p className="checkout-summary-label">RESUMEN DEL TURNO</p>
-            <h2 className="checkout-summary-service">{serviceName}</h2>
-          </div>
+            <div className="checkout-summary-header">
+              <p className="checkout-summary-label">
+                RESUMEN DE LA RESERVA
+              </p>
 
-          <div className="checkout-summary-body">
-            <div className="checkout-summary-row">
-              <span>👤 Profesional</span>
-              <strong>{professionalName}</strong>
+              <h2 className="checkout-summary-service">
+                {appointments.length > 1
+                  ? `${appointments.length} turnos`
+                  : appointments[0]?.serviceName || serviceName}
+              </h2>
             </div>
+                
+            <div className="checkout-summary-body">
+              {appointments.length > 0 ? (
+                <div className="checkout-appointments">
+                  {appointments.map((appointment, index) => (
+                    <div
+                      className="checkout-appointment-item"
+                      key={`${appointment.serviceId}-${appointment.professionalId}-${appointment.date}-${appointment.time}-${index}`}
+                    >
+                      <div className="checkout-appointment-header">
+                        <span>Turno {index + 1}</span>
+                  
+                        <strong>
+                          ${Number(
+                            appointment.price || 0
+                          ).toLocaleString("es-AR")}
+                        </strong>
+                      </div>
+                        
+                      <h3 className="checkout-appointment-service">
+                        {appointment.serviceName}
+                      </h3>
+                        
+                      <div className="checkout-appointment-details">
+                        <p>
+                          👤 {appointment.professionalName}
+                        </p>
+                        
+                        <p>
+                          📅 {formatDate(appointment.date)}
+                        </p>
+                        
+                        <p>
+                          🕒 {appointment.time} hs
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <>
+                  <div className="checkout-summary-row">
+                    <span>Servicio</span>
+                    <strong>{serviceName}</strong>
+                  </div>
+              
+                  <div className="checkout-summary-row">
+                    <span>👤 Profesional</span>
+                    <strong>{professionalName}</strong>
+                  </div>
+              
+                  <div className="checkout-summary-row">
+                    <span>📅 Fecha</span>
+                    <strong>{formatDate(date)}</strong>
+                  </div>
+              
+                  <div className="checkout-summary-row">
+                    <span>🕒 Hora</span>
+                    <strong>{time || "—"}</strong>
+                  </div>
+                </>
+              )}
 
-            <div className="checkout-summary-row">
-              <span>📅 Fecha</span>
-              <strong>{formattedDate}</strong>
+              <div className="checkout-summary-divider" />
+            
+              <div className="checkout-summary-row">
+                <span>Precio total</span>
+            
+                <strong>
+                  ${Number(totalPrice).toLocaleString("es-AR")}
+                </strong>
+              </div>
+            
+              <div className="checkout-summary-row">
+                <span>Saldo a pagar en el centro</span>
+            
+                <strong>
+                  $
+                  {(
+                    Number(totalPrice) - Number(deposit)
+                  ).toLocaleString("es-AR")}
+                </strong>
+              </div>
+                
+              <div className="checkout-deposit-box">
+                <span>Seña a pagar ahora</span>
+                
+                <strong>
+                  ${Number(deposit).toLocaleString("es-AR")}
+                </strong>
+              </div>
+                
+              <div className="checkout-warning-box">
+                ⚠️ La seña no es reembolsable. Podés
+                reprogramar tus turnos hasta 2 veces según las
+                condiciones de la reserva.
+              </div>
             </div>
-
-            <div className="checkout-summary-row">
-              <span>🕒 Hora</span>
-              <strong>{time || "—"}</strong>
-            </div>
-
-            <div className="checkout-summary-divider" />
-
-            <div className="checkout-summary-row">
-              <span>Precio total del servicio</span>
-              <strong>${totalPrice.toLocaleString("es-AR")}</strong>
-            </div>
-
-            <div className="checkout-summary-row">
-              <span>Saldo a pagar en el centro</span>
-              <strong>${(totalPrice - deposit).toLocaleString("es-AR")}</strong>
-            </div>
-
-            <div className="checkout-deposit-box">
-              <span>Seña a pagar ahora</span>
-              <strong>${deposit.toLocaleString("es-AR")}</strong>
-            </div>
-
-            <div className="checkout-warning-box">
-              ⚠️ La seña se descuenta del total. La cancelación con menos de 24 hs de
-              anticipación no es reembolsable.
-            </div>
-          </div>
-
-          <ul className="checkout-info-list">
-            <li>🔒 Tu información está protegida con encriptación de 256 bits.</li>
-            <li>🛡️ Reembolso garantizado si cancelás con más de 24 hs de anticipación.</li>
-            <li>💬 Soporte disponible vía chat ante cualquier inconveniente.</li>
-          </ul>
-        </aside>
+                
+            <ul className="checkout-info-list">
+              <li>
+                🔒 Tu información está protegida con
+                encriptación de 256 bits.
+              </li>
+                
+              <li>
+                📅 Podés reprogramar cada turno hasta 2 veces
+                para conservar la seña abonada.
+              </li>
+                
+              <li>
+                💬 Soporte disponible vía chat ante cualquier
+                inconveniente.
+              </li>
+            </ul>
+          </aside>
       </div>
     </div>
   );

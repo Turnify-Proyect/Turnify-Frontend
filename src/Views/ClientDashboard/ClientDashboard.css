@@ -397,3 +397,75 @@
     padding: 24px 20px;
   }
 }
+
+.appointment-order-card {
+  background: #fff;
+  border-radius: 18px;
+  padding: 0 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 5px 18px rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+
+.appointment-order-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px 0 14px;
+  border-bottom: 1px solid #eeeeee;
+}
+
+.appointment-order-label {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.appointment-order-count {
+  margin-left: 10px;
+  font-size: 14px;
+  opacity: 0.65;
+}
+
+.appointment-order-items {
+  display: flex;
+  flex-direction: column;
+}
+
+.appointment-order-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 22px 0;
+  border-bottom: 1px solid #eeeeee;
+}
+
+.appointment-order-item:last-child {
+  border-bottom: none;
+}
+
+.appointment-order-payment {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 18px 0 22px;
+  border-top: 1px solid #eeeeee;
+}
+
+.appointment-order-payment p {
+  margin: 4px 0 0;
+  font-size: 14px;
+}
+
+.appointment-pay-button {
+  border: none;
+  border-radius: 10px;
+  padding: 12px 22px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
