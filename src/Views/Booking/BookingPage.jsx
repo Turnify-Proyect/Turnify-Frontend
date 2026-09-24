@@ -326,7 +326,7 @@ function BookingPage() {
         date: selected.date,
         time: selected.time,
 
-        startAt: `${selected.date}T${selected.time}:00`,
+        startAt: `${selected.date}T${selected.time}:00-03:00`,
       }
     : null;
 
