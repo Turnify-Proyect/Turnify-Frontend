@@ -52,17 +52,12 @@ const AdminAppointments = () => {
 
   const date = new Date(year, month - 1, day);
 
-  const days = [
-    "sunday",
-    "monday",
-    "tuesday",
-    "wednesday",
-    "thursday",
-    "friday",
-    "saturday",
-  ];
-
-  return days[date.getDay()];
+  return new Intl.DateTimeFormat("en-US", {
+    weekday: "long",
+    timeZone: "America/Argentina/Buenos_Aires",
+  })
+    .format(date)
+    .toLowerCase();
 };
 
   // Obtener todos los turnos
