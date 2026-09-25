@@ -21,6 +21,10 @@ export const fetchAllServices = async (token) => {
   const data = await response.json();
 
   if (!response.ok) {
+
+  console.log("Detalle del error:", data); // 👈 acá
+
+
     throw new Error(
       getErrorMessage(
         data,
