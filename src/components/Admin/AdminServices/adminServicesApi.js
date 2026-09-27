@@ -152,3 +152,22 @@ export const reactivateServiceApi = async (
 
   return data;
 };
+
+export const fetchCategories = async () => {
+  const response = await fetch(
+    `${API_URL}/categories`
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      getErrorMessage(
+        data,
+        "No se pudieron obtener las categorías."
+      )
+    );
+  }
+
+  return data;
+};

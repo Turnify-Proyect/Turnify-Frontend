@@ -7,23 +7,15 @@ import {
   updateServiceApi,
   deactivateServiceApi,
   reactivateServiceApi,
+  fetchCategories,
 } from "./adminServicesApi";
 
 import "./AdminServices.css";
 
-const SERVICE_CATEGORIES = [
-  { value: "Masajes", label: "Masajes" },
-  { value: "Faciales", label: "Faciales" },
-  { value: "Uñas", label: "Uñas" },
-  { value: "Pedicuría", label: "Pedicuría" },
-  { value: "Cabello", label: "Cabello" },
-  { value: "Spa", label: "Spa" },
-];
-
 const EMPTY_FORM = {
   name: "",
   description: "",
-  category: "",
+  categoryId: "",
   price: "",
   durationMinutes: "",
   imageUrl: "",
@@ -33,6 +25,7 @@ const AdminServices = () => {
   const { token } = useAuth();
 
   const [services, setServices] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -55,6 +48,17 @@ const AdminServices = () => {
   const [saving, setSaving] =
     useState(false);
 
+  const getCategories = async () => {
+  try {
+    const data = await fetchCategories();
+    setCategories(data);
+  } catch (err) {
+    setError(
+      err.message ||
+        "Ocurrió un error al obtener las categorías."
+    );
+  }
+};
   const [isUploading, setIsUploading] = useState(false);
 
   const handleImageUpload = async (e) => {
@@ -124,25 +128,21 @@ const data = await response.json();
   };
 
   useEffect(() => {
-    getServices();
-  }, [token]);
+  getServices();
+  getCategories();
+}, [token]);
 
   const fillForm = (service) => {
-    setForm({
-      name: service.name || "",
-      description:
-        service.description || "",
-      category:
-        service.category || "",
-      price:
-        service.price?.toString() || "",
-      durationMinutes:
-        service.durationMinutes?.toString() ||
-        "",
-      imageUrl:
-        service.imageUrl || "",
-    });
-  };
+  setForm({
+    name: service.name || "",
+    description: service.description || "",
+    categoryId: service.category?.id || "",
+    price: service.price?.toString() || "",
+    durationMinutes:
+      service.durationMinutes?.toString() || "",
+    imageUrl: service.imageUrl || "",
+  });
+};
 
   const handleFormChange = (e) => {
     const { name, value } = e.target;
@@ -161,10 +161,11 @@ const data = await response.json();
       return false;
     }
 
-    if (!form.category) {
+    if (!form.categoryId) {
       setError(
         "Seleccioná una categoría."
       );
+    
       return false;
     }
 
@@ -191,6 +192,29 @@ const data = await response.json();
     return true;
   };
 
+  const buildPayload = () => ({
+    name: form.name.trim(),
+
+    description:
+      form.description.trim() || undefined,
+
+    categoryId: form.categoryId,
+
+    // DTO espera string
+    price: String(form.price),
+
+    // DTO espera entero
+    durationMinutes: Number(
+      form.durationMinutes
+    ),
+
+    imageUrl:
+      form.imageUrl.trim() || undefined,
+  });
+
+  // =========================
+  // CREAR
+  // =========================
 
   const openCreateModal = () => {
     setError("");
@@ -228,8 +252,8 @@ const data = await response.json();
 
 
       await createServiceApi(
-        payload,
-        token
+         buildPayload(),
+          token
       );
 
       await getServices();
@@ -288,7 +312,7 @@ const data = await response.json();
         const updated =
           await updateServiceApi(
             selectedService.id,
-            handleImageUpload(),
+            buildPayload(),            
             token
           );
 
@@ -357,7 +381,7 @@ const data = await response.json();
         service.name
           ?.toLowerCase()
           .includes(value) ||
-        service.category
+        service.category?.name
           ?.toLowerCase()
           .includes(value) ||
         service.description
@@ -417,24 +441,22 @@ const data = await response.json();
         Categoría *
 
         <select
-          name="category"
-          value={form.category}
+          name="categoryId"
+          value={form.categoryId}
           onChange={handleFormChange}
         >
           <option value="">
             Seleccionar categoría
           </option>
 
-          {SERVICE_CATEGORIES.map(
-            (category) => (
-              <option
-                key={category.value}
-                value={category.value}
-              >
-                {category.label}
-              </option>
-            )
-          )}
+          {categories.map((category) => (
+            <option
+              key={category.id}
+              value={category.id}
+            >
+              {category.name}
+            </option>
+          ))}
         </select>
       </label>
 
@@ -632,8 +654,7 @@ const data = await response.json();
                     </td>
 
                     <td>
-                      {service.category ||
-                        "-"}
+                      {service.category?.name || "-"}
                     </td>
 
                     <td>
@@ -772,8 +793,7 @@ const data = await response.json();
                         Categoría
                       </span>
                       <strong>
-                        {selectedService.category ||
-                          "-"}
+                        {selectedService.category?.name || "-"}
                       </strong>
                     </div>
 
