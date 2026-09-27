@@ -59,6 +59,55 @@ const AdminServices = () => {
     );
   }
 };
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    setError("");
+
+
+    const UPLOAD_PRESET = import.meta.env.VITE_UPLOAD_PRESET;
+    const CLOUD_NAME = import.meta.env.VITE_CLOUD_NAME;
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", UPLOAD_PRESET);
+
+    try {
+      const response = await fetch(
+        `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+const data = await response.json();
+
+
+      if (data.secure_url) {
+
+        setForm((current) => ({
+          ...current,
+          imageUrl: data.secure_url,
+        }));
+        return data.secure_url;
+      } else {
+        setError("No se pudo procesar la respuesta de la imagen.");
+        return null;
+      }
+    } catch (err) {
+      console.error("Error Cloudinary:", err);
+      setError("Error al subir la imagen al servidor.");
+      return null;
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
 
   const getServices = async () => {
     try {
@@ -182,13 +231,29 @@ const AdminServices = () => {
   const createService = async () => {
     if (!validateForm()) return;
 
+    if (isUploading) {
+      setError("Esperá a que termine de subir la imagen.");
+    return;
+    }
+    if (!form.imageUrl) {
+    setError("Subí una imagen antes de crear el servicio.");
+    return;
+  }
+    
     try {
       setSaving(true);
       setError("");
 
+          const payload = {
+      ...form,
+      durationMinutes: Number(form.durationMinutes),
+    };
+
+
+
       await createServiceApi(
-        buildPayload(),
-        token
+         buildPayload(),
+          token
       );
 
       await getServices();
@@ -247,7 +312,7 @@ const AdminServices = () => {
         const updated =
           await updateServiceApi(
             selectedService.id,
-            buildPayload(),
+            buildPayload(),            
             token
           );
 
@@ -436,17 +501,57 @@ const AdminServices = () => {
         />
       </label>
 
-      <label>
-        URL de imagen
+      <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "15px" }}>
+  <span style={{ fontWeight: "600" }}>Imagen del servicio</span>
 
-        <input
-          type="url"
-          name="imageUrl"
-          value={form.imageUrl}
-          onChange={handleFormChange}
-          placeholder="https://..."
-        />
-      </label>
+  <input
+    type="file"
+    id="serviceImageUpload"
+    accept="image/*"
+    onChange={handleImageUpload}
+    disabled={isUploading || saving}
+    style={{ display: "none" }}
+  />
+
+  <label
+    htmlFor="serviceImageUpload"
+    className="admin-create-button"
+    style={{
+      cursor: isUploading || saving ? "not-allowed" : "pointer",
+      opacity: isUploading || saving ? 0.6 : 1,
+      display: "inline-block",
+      width: "fit-content",
+    }}
+  >
+    {isUploading ? "Subiendo..." : "Seleccionar imagen"}
+  </label>
+
+  {isUploading && (
+    <p style={{ fontSize: "0.85rem", color: "#666", margin: "4px 0 0 0" }}>
+      Subiendo archivo a Cloudinary...
+    </p>
+  )}
+
+  {form.imageUrl && (
+    <div style={{ marginTop: "10px", display: "flex", flexDirection: "column", gap: "4px" }}>
+      <p style={{ fontSize: "0.85rem", color: "green", margin: 0 }}>
+        ✓ Imagen lista para guardar
+      </p>
+      <img
+        src={form.imageUrl}
+        alt="Vista previa del servicio"
+        style={{
+          width: "120px",
+          height: "120px",
+          objectFit: "cover",
+          borderRadius: "6px",
+          border: "1px solid #ccc",
+        }}
+      />
+    </div>
+  )}
+</div>
+
     </div>
   );
 
@@ -833,7 +938,6 @@ const AdminServices = () => {
                   closeCreateModal
                 }
               >
-                ×
               </button>
             </div>
 
@@ -865,7 +969,7 @@ const AdminServices = () => {
                 type="button"
                 className="admin-action-primary"
                 onClick={createService}
-                disabled={saving}
+                disabled={isUploading || saving}
               >
                 {saving
                   ? "Creando..."
