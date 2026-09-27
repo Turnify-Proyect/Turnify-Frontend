@@ -5,7 +5,7 @@ import "./Services.css";
 import Navbar from "../../components/Header/Navbar";
 
 const Services = () => {
-  const [selectedCategory, setSelectedCategory] = useState("Todos");
+  const [selectedCategory, setSelectedCategory] = useState("all");
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -35,15 +35,28 @@ const Services = () => {
 const activeServices = services.filter((service) => service.isActive);
 
 const categories = [
-  "Todos",
-  ...new Set(activeServices.map((service) => service.category)),
+  {
+    id: "all",
+    name: "Todos",
+  },
+  ...Array.from(
+    new Map(
+      activeServices
+        .filter((service) => service.category)
+        .map((service) => [
+          service.category.id,
+          service.category,
+        ])
+    ).values()
+  ),
 ];
 
 const filteredServices =
-  selectedCategory === "Todos"
+  selectedCategory === "all"
     ? activeServices
     : activeServices.filter(
-        (service) => service.category === selectedCategory
+        (service) =>
+          service.category?.id === selectedCategory
       );
 
 if (loading) {
@@ -67,17 +80,21 @@ if (error) {
 
          <div className="services-filters">
            {categories.map((category) => (
-             <button
-               key={category}
-               type="button"
-               className={`filter-button ${
-                 selectedCategory === category ? "active" : ""
-               }`}
-               onClick={() => setSelectedCategory(category)}
-             >
-               {category}
-             </button>
-           ))}
+              <button
+                key={category.id}
+                type="button"
+                className={`filter-button ${
+                  selectedCategory === category.id
+                    ? "active"
+                    : ""
+                }`}
+                onClick={() =>
+                  setSelectedCategory(category.id)
+                }
+              >
+                {category.name}
+              </button>
+            ))}
          </div>
 
          <div className="services-grid">
