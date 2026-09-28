@@ -8,6 +8,9 @@ import {
   deactivateServiceApi,
   reactivateServiceApi,
   fetchCategories,
+  createCategoryApi,
+  deactivateCategoryApi,
+  reactivateCategoryApi,
 } from "./adminServicesApi";
 
 import "./AdminServices.css";
@@ -46,6 +49,18 @@ const AdminServices = () => {
     useState(EMPTY_FORM);
 
   const [saving, setSaving] =
+    useState(false);
+
+  const [showNewCategory, setShowNewCategory] =
+  useState(false);
+
+  const [newCategoryName, setNewCategoryName] =
+    useState("");
+
+  const [newCategoryIcon, setNewCategoryIcon] =
+    useState("");
+
+  const [savingCategory, setSavingCategory] =
     useState(false);
 
   const getCategories = async () => {
@@ -153,6 +168,103 @@ const data = await response.json();
     }));
   };
 
+  const handleCategoryChange = (e) => {
+    const value = e.target.value;
+
+    if (value === "__new__") {
+      setShowNewCategory(true);
+
+      setForm((current) => ({
+        ...current,
+        categoryId: "",
+      }));
+
+      return;
+    }
+
+    setShowNewCategory(false);
+    setNewCategoryName("");
+    setNewCategoryIcon("");
+
+    setForm((current) => ({
+      ...current,
+      categoryId: value,
+    }));
+  };
+
+  const handleCreateCategory = async () => {
+  const name = newCategoryName.trim();
+
+  if (!name) {
+    setError(
+      "Ingresá el nombre de la categoría."
+    );
+    return;
+  }
+
+  try {
+    setSavingCategory(true);
+    setError("");
+
+    const created =
+      await createCategoryApi(
+        {
+          name,
+          icon:
+            newCategoryIcon.trim() ||
+            undefined,
+        },
+        token
+      );
+
+    await getCategories();
+
+    setForm((current) => ({
+      ...current,
+      categoryId: created.id,
+    }));
+
+    setNewCategoryName("");
+    setNewCategoryIcon("");
+    setShowNewCategory(false);
+  } catch (err) {
+    setError(
+      err.message ||
+        "No se pudo crear la categoría."
+    );
+  } finally {
+    setSavingCategory(false);
+  }
+};
+
+const handleDeactivateCategory = async () => {
+  if (!form.categoryId) return;
+
+  try {
+    setSavingCategory(true);
+    setError("");
+
+    await deactivateCategoryApi(
+      form.categoryId,
+      token
+    );
+
+    await getCategories();
+
+    setForm((current) => ({
+      ...current,
+      categoryId: "",
+    }));
+  } catch (err) {
+    setError(
+      err.message ||
+        "No se pudo desactivar la categoría."
+    );
+  } finally {
+    setSavingCategory(false);
+  }
+};
+
   const validateForm = () => {
     if (!form.name.trim()) {
       setError(
@@ -217,16 +329,22 @@ const data = await response.json();
   // =========================
 
   const openCreateModal = () => {
-    setError("");
-    setForm(EMPTY_FORM);
-    setShowCreateModal(true);
-  };
+  setError("");
+  setForm(EMPTY_FORM);
+  setShowNewCategory(false);
+  setNewCategoryName("");
+  setNewCategoryIcon("");
+  setShowCreateModal(true);
+};
 
   const closeCreateModal = () => {
-    setShowCreateModal(false);
-    setForm(EMPTY_FORM);
-    setError("");
-  };
+  setShowCreateModal(false);
+  setForm(EMPTY_FORM);
+  setShowNewCategory(false);
+  setNewCategoryName("");
+  setNewCategoryIcon("");
+  setError("");
+};
 
   const createService = async () => {
     if (!validateForm()) return;
@@ -283,11 +401,14 @@ const data = await response.json();
   };
 
   const closeServiceModal = () => {
-    setSelectedService(null);
-    setIsEditing(false);
-    setForm(EMPTY_FORM);
-    setError("");
-  };
+  setSelectedService(null);
+  setIsEditing(false);
+  setForm(EMPTY_FORM);
+  setShowNewCategory(false);
+  setNewCategoryName("");
+  setNewCategoryIcon("");
+  setError("");
+};
 
   const startEditing = () => {
     fillForm(selectedService);
@@ -440,10 +561,11 @@ const data = await response.json();
       <label>
         Categoría *
 
+        <div className="category-select-row">
         <select
           name="categoryId"
           value={form.categoryId}
-          onChange={handleFormChange}
+          onChange={handleCategoryChange}
         >
           <option value="">
             Seleccionar categoría
@@ -457,7 +579,59 @@ const data = await response.json();
               {category.name}
             </option>
           ))}
-        </select>
+          <option value="__new__">
+            + Nueva categoría
+          </option>
+          </select>
+
+          {form.categoryId && (
+              <button
+                type="button"
+                className="category-delete-button"
+                onClick={handleDeactivateCategory}
+                disabled={savingCategory}
+                title="Desactivar categoría"
+                aria-label="Desactivar categoría"
+              >
+                🗑
+              </button>
+            )}
+          </div>
+
+          {showNewCategory && (
+              <div className="category-inline-create">
+                <input
+                  type="text"
+                  placeholder="Nombre de la categoría"
+                  value={newCategoryName}
+                  onChange={(e) =>
+                    setNewCategoryName(e.target.value)
+                  }
+                  maxLength={100}
+                />
+
+                <input
+                  type="text"
+                  placeholder="Ícono opcional"
+                  value={newCategoryIcon}
+                  onChange={(e) =>
+                    setNewCategoryIcon(e.target.value)
+                  }
+                  maxLength={20}
+                />
+
+                <button
+                  type="button"
+                  className="category-create-button"
+                  onClick={handleCreateCategory}
+                  disabled={savingCategory}
+                >
+                  {savingCategory
+                    ? "Creando..."
+                    : "Crear categoría"}
+                </button>
+              </div>
+            )}
       </label>
 
       <div className="service-form-row">
@@ -491,18 +665,20 @@ const data = await response.json();
       </div>
 
       <label>
-        Descripción
+  Descripción
 
-        <textarea
-          name="description"
-          value={form.description}
-          onChange={handleFormChange}
-          rows="4"
-        />
-      </label>
+  <textarea
+    name="description"
+    value={form.description}
+    onChange={handleFormChange}
+    rows="4"
+  />
+</label>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "15px" }}>
-  <span style={{ fontWeight: "600" }}>Imagen del servicio</span>
+<div className="service-image-field">
+  <span className="service-image-label">
+    Imagen del servicio
+  </span>
 
   <input
     type="file"
@@ -510,50 +686,45 @@ const data = await response.json();
     accept="image/*"
     onChange={handleImageUpload}
     disabled={isUploading || saving}
-    style={{ display: "none" }}
+    hidden
   />
 
   <label
     htmlFor="serviceImageUpload"
-    className="admin-create-button"
-    style={{
-      cursor: isUploading || saving ? "not-allowed" : "pointer",
-      opacity: isUploading || saving ? 0.6 : 1,
-      display: "inline-block",
-      width: "fit-content",
-    }}
+    className={`service-image-upload-button ${
+      isUploading || saving ? "disabled" : ""
+    }`}
   >
-    {isUploading ? "Subiendo..." : "Seleccionar imagen"}
+    <span className="service-image-upload-icon">
+      ↑
+    </span>
+
+    {isUploading
+      ? "Subiendo imagen..."
+      : "Seleccionar imagen"}
   </label>
 
   {isUploading && (
-    <p style={{ fontSize: "0.85rem", color: "#666", margin: "4px 0 0 0" }}>
-      Subiendo archivo a Cloudinary...
+    <p className="service-image-message">
+      Subiendo archivo...
     </p>
   )}
 
   {form.imageUrl && (
-    <div style={{ marginTop: "10px", display: "flex", flexDirection: "column", gap: "4px" }}>
-      <p style={{ fontSize: "0.85rem", color: "green", margin: 0 }}>
-        ✓ Imagen lista para guardar
-      </p>
+    <div className="service-image-preview">
       <img
         src={form.imageUrl}
         alt="Vista previa del servicio"
-        style={{
-          width: "120px",
-          height: "120px",
-          objectFit: "cover",
-          borderRadius: "6px",
-          border: "1px solid #ccc",
-        }}
       />
+
+      <span>
+        Imagen lista para guardar
+      </span>
     </div>
   )}
 </div>
-
-    </div>
-  );
+</div>
+);
 
   return (
     <div className="admin-page">

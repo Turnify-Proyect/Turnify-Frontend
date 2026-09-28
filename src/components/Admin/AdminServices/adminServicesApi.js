@@ -171,3 +171,89 @@ export const fetchCategories = async () => {
 
   return data;
 };
+
+export const createCategoryApi = async (
+  categoryData,
+  token
+) => {
+  const response = await fetch(
+    `${API_URL}/categories`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(categoryData),
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      getErrorMessage(
+        data,
+        "No se pudo crear la categoría."
+      )
+    );
+  }
+
+  return data;
+};
+
+export const deactivateCategoryApi = async (
+  id,
+  token
+) => {
+  const response = await fetch(
+    `${API_URL}/categories/${id}`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      getErrorMessage(
+        data,
+        "No se pudo desactivar la categoría."
+      )
+    );
+  }
+
+  return data;
+};
+
+export const reactivateCategoryApi = async (
+  id,
+  token
+) => {
+  const response = await fetch(
+    `${API_URL}/categories/${id}/reactivate`,
+    {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      getErrorMessage(
+        data,
+        "No se pudo reactivar la categoría."
+      )
+    );
+  }
+
+  return data;
+};
