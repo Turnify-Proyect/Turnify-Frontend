@@ -21,36 +21,20 @@ const DAYS = [
   { value: "sunday", label: "Domingo" },
 ];
 
-const EMPTY_FORM = {
-  dayOfWeek: "monday",
-  startTime: "",
-  endTime: "",
-};
-
 const AdminAvailability = () => {
   const { token } = useAuth();
-
   const [professionals, setProfessionals] = useState([]);
-  const [selectedProfessionalId, setSelectedProfessionalId] =
-    useState("");
-
+  const [selectedProfessionalId, setSelectedProfessionalId] = useState("");
   const [availability, setAvailability] = useState([]);
-
   const [loading, setLoading] = useState(true);
-  const [loadingAvailability, setLoadingAvailability] =
-    useState(false);
-
+  const [loadingAvailability, setLoadingAvailability] = useState(false);
+  const [savingId, setSavingId] = useState(null);
   const [error, setError] = useState("");
+  const [pendingProfessionalId, setPendingProfessionalId] = useState("");
+  const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
 
-  const [showCreateModal, setShowCreateModal] =
-    useState(false);
+  const hasUnsavedChanges = availability.some((item) => item.isNew || item.isDirty);
 
-  const [selectedAvailability, setSelectedAvailability] =
-    useState(null);
-
-  const [form, setForm] = useState(EMPTY_FORM);
-
-  const [saving, setSaving] = useState(false);
 
   // =========================
   // PROFESIONALES
@@ -116,47 +100,200 @@ const AdminAvailability = () => {
     }
   };
 
-  const handleProfessionalChange = async (e) => {
-    const professionalId = e.target.value;
-
+  const changeProfessional = async (professionalId) => {
     setSelectedProfessionalId(professionalId);
     setAvailability([]);
     setError("");
+    setShowUnsavedWarning(false);
+    setPendingProfessionalId("");
 
     if (professionalId) {
       await getAvailability(professionalId);
     }
   };
 
-  // =========================
-  // FORMULARIO
-  // =========================
+  const handleProfessionalChange = async (e) => {
+    const professionalId = e.target.value;
 
-  const handleFormChange = (e) => {
-    const { name, value } = e.target;
+    if (
+      professionalId !== selectedProfessionalId &&
+      hasUnsavedChanges
+    ) {
+      setPendingProfessionalId(professionalId);
+      setShowUnsavedWarning(true);
 
-    setForm((current) => ({
-      ...current,
-      [name]: value,
-    }));
-  };
-
-  const validateForm = () => {
-    if (!form.dayOfWeek) {
-      setError("Seleccioná un día.");
-      return false;
+      return;
     }
 
-    if (!form.startTime || !form.endTime) {
+    await changeProfessional(professionalId);
+  };
+
+  const handleSlotChange = (slotKey, field, value) => {
+  setAvailability((current) =>
+    current.map((item) => {
+      const key = item.id || item.tempId;
+
+      if (key !== slotKey) {
+        return item;
+      }
+
+      return {
+        ...item,
+        [field]: value,
+        isDirty: !item.isNew,
+      };
+    })
+  );
+};
+
+  const discardChangesAndContinue = async () => {
+    const professionalId = pendingProfessionalId;
+
+    setShowUnsavedWarning(false);
+    setPendingProfessionalId("");
+
+    await changeProfessional(professionalId);
+  };
+
+  const keepEditing = () => {
+    setShowUnsavedWarning(false);
+    setPendingProfessionalId("");
+  };
+
+  const addMinutesToTime = (time, minutes) => {
+      const [hours, mins] = time
+        .split(":")
+        .map(Number);
+
+      const totalMinutes =
+        hours * 60 + mins + minutes;
+
+      const newHours = Math.floor(
+        totalMinutes / 60
+      );
+    
+      const newMinutes = totalMinutes % 60;
+    
+      if (newHours >= 24) {
+        return "23:59";
+      }
+    
+      return `${String(newHours).padStart(
+        2,
+        "0"
+      )}:${String(newMinutes).padStart(2, "0")}`;
+    };
+
+  const addAvailabilitySlot = (dayOfWeek) => {
+    if (!selectedProfessionalId) return;
+
+    const daySlots = availability
+      .filter(
+        (item) =>
+          item.dayOfWeek === dayOfWeek
+      )
+      .sort((a, b) =>
+        (a.startTime || "").localeCompare(
+          b.startTime || ""
+        )
+      );
+
+    let startTime = "09:00";
+    let endTime = "13:00";
+
+    if (daySlots.length > 0) {
+      const lastSlot =
+        daySlots[daySlots.length - 1];
+
+      const lastEnd =
+        lastSlot.endTime?.slice(0, 5);
+
+      if (lastEnd === "23:59") {
+        setError(
+          "No se puede agregar otra franja después de las 23:59."
+        );
+        return;
+      }
+
+      startTime = lastEnd || "09:00";
+
+      endTime = addMinutesToTime(
+        startTime,
+        60
+      );
+    }
+
+    const tempId = crypto.randomUUID();
+
+    setAvailability((current) => [
+      ...current,
+      {
+        tempId,
+        dayOfWeek,
+        startTime,
+        endTime,
+        isNew: true,
+      },
+    ]);
+
+    setError("");
+  };
+
+  const validateSlot = (item) => {
+    const startTime = item.startTime?.slice(0, 5);
+    const endTime = item.endTime?.slice(0, 5);
+
+    if (!startTime || !endTime) {
       setError(
         "Ingresá el horario de inicio y finalización."
       );
       return false;
     }
 
-    if (form.startTime >= form.endTime) {
+    if (startTime >= endTime) {
       setError(
         "El horario de finalización debe ser posterior al horario de inicio."
+      );
+      return false;
+    }
+
+    const currentKey = item.id || item.tempId;
+
+    const overlapping = availability.some(
+      (existing) => {
+        const existingKey =
+          existing.id || existing.tempId;
+
+        if (existingKey === currentKey) {
+          return false;
+        }
+
+        if (
+          existing.dayOfWeek !== item.dayOfWeek
+        ) {
+          return false;
+        }
+
+        const existingStart =
+          existing.startTime?.slice(0, 5);
+
+        const existingEnd =
+          existing.endTime?.slice(0, 5);
+
+        if (!existingStart || !existingEnd) {
+          return false;
+        }
+
+        return (
+          startTime < existingEnd &&
+          endTime > existingStart
+        );
+      }
+    );
+
+    if (overlapping) {
+      setError(
+        "Esta franja se superpone con otro horario configurado para el mismo día."
       );
       return false;
     }
@@ -164,139 +301,84 @@ const AdminAvailability = () => {
     return true;
   };
 
-  // =========================
-  // CREAR
-  // =========================
+  const saveAvailabilitySlot = async (item) => {
+  if (!validateSlot(item)) return;
 
-  const openCreateModal = () => {
-    if (!selectedProfessionalId) {
-      setError(
-        "Seleccioná un profesional antes de agregar disponibilidad."
+  const slotKey = item.id || item.tempId;
+
+  try {
+    setSavingId(slotKey);
+    setError("");
+
+    const data = {
+      dayOfWeek: item.dayOfWeek,
+      startTime: item.startTime.slice(0, 5),
+      endTime: item.endTime.slice(0, 5),
+    };
+
+    if (item.isNew) {
+        const created =
+          await createAvailabilityApi(
+            selectedProfessionalId,
+            data,
+            token
+          );
+        
+        setAvailability((current) =>
+          current.map((availability) =>
+            availability.tempId === item.tempId
+              ? created
+              : availability
+          )
+        );
+      
+          }
+        } catch (err) {
+          setError(
+            err.message ||
+              "No se pudo guardar el horario."
+    );
+  } finally {
+    setSavingId(null);
+  }
+};
+
+  const removeAvailabilitySlot = async (item) => {
+    const slotKey = item.id || item.tempId;
+
+    if (item.isNew) {
+      setAvailability((current) =>
+        current.filter(
+          (availability) =>
+            availability.tempId !== item.tempId
+        )
       );
+
       return;
     }
 
-    setError("");
-    setForm(EMPTY_FORM);
-    setShowCreateModal(true);
-  };
-
-  const closeCreateModal = () => {
-    setShowCreateModal(false);
-    setForm(EMPTY_FORM);
-    setError("");
-  };
-
-  const createAvailability = async () => {
-    if (!validateForm()) return;
-
     try {
-      setSaving(true);
-      setError("");
-
-      await createAvailabilityApi(
-        selectedProfessionalId,
-        {
-          dayOfWeek: form.dayOfWeek,
-          startTime: form.startTime,
-          endTime: form.endTime,
-        },
-        token
-      );
-
-      await getAvailability(selectedProfessionalId);
-
-      closeCreateModal();
-    } catch (err) {
-      setError(
-        err.message ||
-          "No se pudo crear la disponibilidad."
-      );
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // =========================
-  // EDITAR
-  // =========================
-
-  const openEditModal = (item) => {
-    setError("");
-
-    setSelectedAvailability(item);
-
-    setForm({
-      dayOfWeek: item.dayOfWeek,
-      startTime: item.startTime?.slice(0, 5) || "",
-      endTime: item.endTime?.slice(0, 5) || "",
-    });
-  };
-
-  const closeEditModal = () => {
-    setSelectedAvailability(null);
-    setForm(EMPTY_FORM);
-    setError("");
-  };
-
-  const updateAvailability = async () => {
-    if (!validateForm()) return;
-
-    try {
-      setSaving(true);
-      setError("");
-
-      await updateAvailabilityApi(
-        selectedAvailability.id,
-        {
-          dayOfWeek: form.dayOfWeek,
-          startTime: form.startTime,
-          endTime: form.endTime,
-        },
-        token
-      );
-
-      await getAvailability(selectedProfessionalId);
-
-      closeEditModal();
-    } catch (err) {
-      setError(
-        err.message ||
-          "No se pudo actualizar la disponibilidad."
-      );
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // =========================
-  // ELIMINAR
-  // =========================
-
-  const deleteAvailability = async () => {
-    if (!selectedAvailability) return;
-
-    try {
-      setSaving(true);
+      setSavingId(slotKey);
       setError("");
 
       await deleteAvailabilityApi(
-        selectedAvailability.id,
+        item.id,
         token
       );
 
-      await getAvailability(selectedProfessionalId);
-
-      closeEditModal();
+      await getAvailability(
+        selectedProfessionalId
+      );
     } catch (err) {
       setError(
         err.message ||
           "No se pudo eliminar la disponibilidad."
       );
     } finally {
-      setSaving(false);
+      setSavingId(null);
     }
   };
+
 
   // =========================
   // AGRUPAR POR DÍA
@@ -317,7 +399,9 @@ const AdminAvailability = () => {
 
     Object.values(grouped).forEach((items) => {
       items.sort((a, b) =>
-        a.startTime.localeCompare(b.startTime)
+        (a.startTime || "").localeCompare(
+          b.startTime || ""
+        )
       );
     });
 
@@ -330,52 +414,6 @@ const AdminAvailability = () => {
         professional.id === selectedProfessionalId
     );
 
-  const renderForm = () => (
-    <div className="availability-form">
-      <label>
-        Día
-
-        <select
-          name="dayOfWeek"
-          value={form.dayOfWeek}
-          onChange={handleFormChange}
-        >
-          {DAYS.map((day) => (
-            <option
-              key={day.value}
-              value={day.value}
-            >
-              {day.label}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <div className="availability-form-row">
-        <label>
-          Desde
-
-          <input
-            type="time"
-            name="startTime"
-            value={form.startTime}
-            onChange={handleFormChange}
-          />
-        </label>
-
-        <label>
-          Hasta
-
-          <input
-            type="time"
-            name="endTime"
-            value={form.endTime}
-            onChange={handleFormChange}
-          />
-        </label>
-      </div>
-    </div>
-  );
 
   if (loading) {
     return <p>Cargando disponibilidad...</p>;
@@ -392,9 +430,7 @@ const AdminAvailability = () => {
         </p>
       </div>
 
-      {error &&
-        !showCreateModal &&
-        !selectedAvailability && (
+      {error && (
           <p className="admin-error">{error}</p>
         )}
 
@@ -426,16 +462,38 @@ const AdminAvailability = () => {
           </select>
         </div>
 
-        <button
-          type="button"
-          className="admin-create-button"
-          onClick={openCreateModal}
-          disabled={!selectedProfessionalId}
-        >
-          <span>+</span>
-          Agregar horario
-        </button>
       </div>
+
+      {showUnsavedWarning && (
+        <div className="availability-unsaved-warning">
+          <div>
+            <strong>Tenés cambios sin guardar.</strong>
+
+            <p>
+              Si cambiás de profesional, se perderán las
+              modificaciones pendientes.
+            </p>
+          </div>
+
+          <div className="availability-unsaved-actions">
+            <button
+              type="button"
+              className="admin-action-secondary"
+              onClick={keepEditing}
+            >
+              Seguir editando
+            </button>
+
+            <button
+              type="button"
+              className="admin-action-danger"
+              onClick={discardChangesAndContinue}
+            >
+              Descartar y continuar
+            </button>
+          </div>
+        </div>
+      )}
 
       {!selectedProfessionalId ? (
         <div className="admin-card availability-empty-state">
@@ -473,196 +531,143 @@ const AdminAvailability = () => {
             </p>
           ) : (
             <div className="availability-week">
-              {DAYS.map((day) => {
-                const dayAvailability =
-                  availabilityByDay[day.value];
+          {DAYS.map((day) => {
+            const dayAvailability =
+              availabilityByDay[day.value];
+          
+            return (
+              <div
+                className="availability-day"
+                key={day.value}
+              >
+                <div className="availability-day-name">
+                  <strong>{day.label}</strong>
+            
+                  <span>
+                    {dayAvailability.length
+                      ? `${dayAvailability.length} ${
+                          dayAvailability.length === 1
+                            ? "franja"
+                            : "franjas"
+                        }`
+                      : "Sin atención"}
+                  </span>
+                </div>
+                      
+                <div className="availability-day-content">
+                  <div className="availability-day-slots">
+                    {dayAvailability.map((item) => {
+                      const slotKey =
+                        item.id || item.tempId;
+                    
+                      const isSaving =
+                        savingId === slotKey;
+                    
+                      return (
+                        <div
+                          className="availability-slot-row"
+                          key={slotKey}
+                        >
+                          <div className="availability-time-field">
+                            <span>Desde</span>
+                      
+                            <input
+                              type="time"
+                              value={
+                                item.startTime?.slice(
+                                  0,
+                                  5
+                                ) || ""
+                              }
+                              onChange={(e) =>
+                                handleSlotChange(
+                                  slotKey,
+                                  "startTime",
+                                  e.target.value
+                                )
+                              }
+                              disabled={isSaving}
+                            />
+                          </div>
+                            
+                          <span className="availability-time-separator">
+                            —
+                          </span>
+                            
+                          <div className="availability-time-field">
+                            <span>Hasta</span>
+                            
+                            <input
+                              type="time"
+                              value={
+                                item.endTime?.slice(
+                                  0,
+                                  5
+                                ) || ""
+                              }
+                              onChange={(e) =>
+                                handleSlotChange(
+                                  slotKey,
+                                  "endTime",
+                                  e.target.value
+                                )
+                              }
+                              disabled={isSaving}
+                            />
+                          </div>
+                            
+                          <div className="availability-slot-actions">
+                            <button
+                              type="button"
+                              className="availability-save-button"
+                              onClick={() =>
+                                saveAvailabilitySlot(
+                                  item
+                                )
+                              }
+                              disabled={isSaving}
+                              title="Guardar horario"
+                            >
+                              {isSaving ? "..." : "✓"}
+                            </button>
+                            
+                            <button
+                              type="button"
+                              className="availability-delete-button"
+                              onClick={() =>
+                                removeAvailabilitySlot(
+                                  item
+                                )
+                              }
+                              disabled={isSaving}
+                              title="Eliminar horario"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+          </div>
 
-                return (
-                  <div
-                    className="availability-day"
-                    key={day.value}
-                  >
-                    <div className="availability-day-name">
-                      <strong>{day.label}</strong>
-                    </div>
-
-                    <div className="availability-day-slots">
-                      {dayAvailability.length > 0 ? (
-                        dayAvailability.map((item) => (
-                          <button
-                            key={item.id}
-                            type="button"
-                            className="availability-slot"
-                            onClick={() =>
-                              openEditModal(item)
-                            }
-                          >
-                            <span>
-                              {item.startTime?.slice(0, 5)}
-                            </span>
-
-                            <span>—</span>
-
-                            <span>
-                              {item.endTime?.slice(0, 5)}
-                            </span>
-
-                            <small>Editar</small>
-                          </button>
-                        ))
-                      ) : (
-                        <span className="availability-no-slots">
-                          Sin atención
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+          <button
+            type="button"
+            className="availability-add-slot"
+            onClick={() =>
+              addAvailabilitySlot(day.value)
+            }
+          >
+            + Agregar franja
+          </button>
+        </div>
+      </div>
+    );
+  })}
+</div>
           )}
         </div>
       )}
-
-      {/* CREAR */}
-      {showCreateModal && (
-        <div
-          className="admin-modal-overlay"
-          onClick={closeCreateModal}
-        >
-          <div
-            className="admin-modal"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="admin-modal-header">
-              <div>
-                <h2>Agregar disponibilidad</h2>
-
-                <p>
-                  {selectedProfessional?.user?.name ||
-                    "Profesional"}
-                </p>
-              </div>
-
-              <button
-                type="button"
-                className="admin-modal-close"
-                onClick={closeCreateModal}
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="admin-modal-scroll">
-              <div className="admin-modal-body">
-                {error && (
-                  <p className="admin-error">
-                    {error}
-                  </p>
-                )}
-
-                {renderForm()}
-              </div>
-            </div>
-
-            <div className="admin-modal-actions">
-              <button
-                type="button"
-                className="admin-action-secondary"
-                onClick={closeCreateModal}
-                disabled={saving}
-              >
-                Cancelar
-              </button>
-
-              <button
-                type="button"
-                className="admin-action-primary"
-                onClick={createAvailability}
-                disabled={saving}
-              >
-                {saving
-                  ? "Guardando..."
-                  : "Agregar horario"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* EDITAR */}
-      {selectedAvailability && (
-        <div
-          className="admin-modal-overlay"
-          onClick={closeEditModal}
-        >
-          <div
-            className="admin-modal"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="admin-modal-header">
-              <div>
-                <h2>Editar disponibilidad</h2>
-
-                <p>
-                  Modificá el día o el horario del bloque.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                className="admin-modal-close"
-                onClick={closeEditModal}
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="admin-modal-scroll">
-              <div className="admin-modal-body">
-                {error && (
-                  <p className="admin-error">
-                    {error}
-                  </p>
-                )}
-
-                {renderForm()}
-              </div>
-            </div>
-
-            <div className="admin-modal-actions">
-              <button
-                type="button"
-                className="admin-action-danger"
-                onClick={deleteAvailability}
-                disabled={saving}
-              >
-                Eliminar horario
-              </button>
-
-              <button
-                type="button"
-                className="admin-action-secondary"
-                onClick={closeEditModal}
-                disabled={saving}
-              >
-                Cancelar
-              </button>
-
-              <button
-                type="button"
-                className="admin-action-primary"
-                onClick={updateAvailability}
-                disabled={saving}
-              >
-                {saving
-                  ? "Guardando..."
-                  : "Guardar cambios"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+  
     </div>
   );
 };

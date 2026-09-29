@@ -140,9 +140,11 @@ export const deleteAvailabilityApi = async (
     }
   );
 
-  const data = await response.json();
-
   if (!response.ok) {
+    const data = await response
+      .json()
+      .catch(() => null);
+
     throw new Error(
       getErrorMessage(
         data,
@@ -151,5 +153,5 @@ export const deleteAvailabilityApi = async (
     );
   }
 
-  return data;
+  return true;
 };
