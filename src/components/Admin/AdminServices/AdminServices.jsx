@@ -10,7 +10,6 @@ import {
   fetchCategories,
   createCategoryApi,
   deactivateCategoryApi,
-  reactivateCategoryApi,
 } from "./adminServicesApi";
 
 import "./AdminServices.css";
