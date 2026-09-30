@@ -7,6 +7,7 @@ import {
   updateServiceApi,
   deactivateServiceApi,
   reactivateServiceApi,
+  uploadServiceImageApi,
 } from "./adminServicesApi";
 
 import "./AdminServices.css";
@@ -51,6 +52,9 @@ const AdminServices = () => {
 
   const [form, setForm] =
     useState(EMPTY_FORM);
+
+  const [selectedFile, setSelectedFile] =
+    useState(null);
 
   const [saving, setSaving] =
     useState(false);
@@ -168,12 +172,14 @@ const AdminServices = () => {
   const openCreateModal = () => {
     setError("");
     setForm(EMPTY_FORM);
+    setSelectedFile(null);
     setShowCreateModal(true);
   };
 
   const closeCreateModal = () => {
     setShowCreateModal(false);
     setForm(EMPTY_FORM);
+    setSelectedFile(null);
     setError("");
   };
 
@@ -184,10 +190,18 @@ const AdminServices = () => {
       setSaving(true);
       setError("");
 
-      await createServiceApi(
+      const created = await createServiceApi(
         buildPayload(),
         token
       );
+
+      if (selectedFile && created?.id) {
+        await uploadServiceImageApi(
+          created.id,
+          selectedFile,
+          token
+        );
+      }
 
       await getServices();
 
@@ -211,12 +225,14 @@ const AdminServices = () => {
   ) => {
     setError("");
     setSelectedService(service);
+    setSelectedFile(null);
     setIsEditing(false);
     fillForm(service);
   };
 
   const closeServiceModal = () => {
     setSelectedService(null);
+    setSelectedFile(null);
     setIsEditing(false);
     setForm(EMPTY_FORM);
     setError("");
@@ -224,12 +240,14 @@ const AdminServices = () => {
 
   const startEditing = () => {
     fillForm(selectedService);
+    setSelectedFile(null);
     setError("");
     setIsEditing(true);
   };
 
   const cancelEditing = () => {
     fillForm(selectedService);
+    setSelectedFile(null);
     setError("");
     setIsEditing(false);
   };
@@ -242,14 +260,24 @@ const AdminServices = () => {
         setSaving(true);
         setError("");
 
-        const updated =
+        let updated =
           await updateServiceApi(
             selectedService.id,
             buildPayload(),
             token
           );
 
+        if (selectedFile && selectedService?.id) {
+          updated =
+            await uploadServiceImageApi(
+              selectedService.id,
+              selectedFile,
+              token
+            );
+        }
+
         setSelectedService(updated);
+        setSelectedFile(null);
 
         await getServices();
 
@@ -437,7 +465,33 @@ const AdminServices = () => {
       </label>
 
       <label>
-        URL de imagen
+        Subir archivo de imagen (Cloudinary)
+
+        <input
+          type="file"
+          accept="image/*"
+          onChange={(e) =>
+            setSelectedFile(
+              e.target.files[0] || null
+            )
+          }
+        />
+        {selectedFile && (
+          <small
+            style={{
+              color: "#3B584B",
+              fontWeight: "600",
+              marginTop: "4px",
+              display: "block",
+            }}
+          >
+            ✓ Archivo seleccionado: {selectedFile.name}
+          </small>
+        )}
+      </label>
+
+      <label>
+        O pegar URL de imagen externa
 
         <input
           type="url"

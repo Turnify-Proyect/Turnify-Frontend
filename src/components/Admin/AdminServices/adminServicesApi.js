@@ -148,3 +148,36 @@ export const reactivateServiceApi = async (
 
   return data;
 };
+
+export const uploadServiceImageApi = async (
+  id,
+  file,
+  token
+) => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch(
+    `${API_URL}/services/${id}/upload-image`,
+    {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      getErrorMessage(
+        data,
+        "No se pudo subir la imagen del servicio a Cloudinary."
+      )
+    );
+  }
+
+  return data;
+};
