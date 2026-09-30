@@ -695,31 +695,37 @@ const handleDeactivateCategory = async () => {
   />
 </label>
 
-      <label>
-        Subir archivo de imagen (Cloudinary)
+      <div className="service-image-field">
+        <label className="service-image-label">
+          Imagen del servicio (Cloudinary)
+        </label>
 
         <input
           type="file"
+          id="serviceImageFileInput"
           accept="image/*"
           onChange={(e) =>
             setSelectedFile(
               e.target.files[0] || null
             )
           }
+          hidden
         />
-        {selectedFile && (
-          <small
-            style={{
-              color: "#3B584B",
-              fontWeight: "600",
-              marginTop: "4px",
-              display: "block",
-            }}
-          >
-            ✓ Archivo seleccionado: {selectedFile.name}
-          </small>
-        )}
-      </label>
+
+        <label
+          htmlFor="serviceImageFileInput"
+          className="service-image-upload-button"
+        >
+          <span className="service-image-upload-icon">
+            📷
+          </span>
+          <span>
+            {selectedFile
+              ? `✓ ${selectedFile.name}`
+              : "Seleccionar imagen desde tu equipo"}
+          </span>
+        </label>
+      </div>
 
       <label>
         O pegar URL de imagen externa
