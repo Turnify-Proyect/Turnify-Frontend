@@ -29,6 +29,9 @@ function ClientDashboard() {
     address: "",
   });
 
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [appointments, setAppointments] = useState([]);
 
   const [loading, setLoading] = useState(true);
@@ -123,6 +126,59 @@ function ClientDashboard() {
       .slice(0, 2)
       .toUpperCase();
   };
+
+  const handleImageChange = (event) => {
+  const file = event.target.files?.[0];
+
+  if (!file) return;
+
+  setSelectedImage(file);
+
+  const previewUrl = URL.createObjectURL(file);
+  setImagePreview(previewUrl);
+};
+
+const handleUploadImage = async () => {
+  if (!selectedImage) return;
+
+  try {
+    setUploadingImage(true);
+
+    const formData = new FormData();
+    formData.append("file", selectedImage);
+
+    const response = await fetch(
+      `${API_URL}/users/${profile.id}/upload-avatar`,
+      {
+        method: "PATCH",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      }
+    );
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        Array.isArray(data.message)
+          ? data.message.join(", ")
+          : data.message || "No se pudo subir la imagen"
+      );
+    }
+
+    setProfile(data);
+    setSelectedImage(null);
+    setImagePreview(null);
+
+    alert("Foto de perfil actualizada correctamente");
+  } catch (error) {
+    alert(error.message);
+  } finally {
+    setUploadingImage(false);
+  }
+};
 
      const handleSaveProfile = async () => {
      try {
@@ -519,111 +575,154 @@ const handlePayOrder = (group) => {
         )}
 
         {tab === "profile" && (
-          <section className="profile-card">
-            <div className="profile-header">
-              <div className="profile-avatar">
-                {getInitials()}
-              </div>
+<section className="profile-card">
 
-              <div>
-                <h3>{profileData.name}</h3>
-              </div>
-            </div>
+  <div className="profile-header">
 
-            <div className="profile-form">
-              <div className="form-group">
-                <label>Nombre</label>
+    <div className="profile-avatar">
+      {imagePreview || profile?.imgUrl ? (
+        <img
+          src={imagePreview || profile.imgUrl}
+          alt="Foto de perfil"
+          className="profile-avatar-image"
+        />
+      ) : (
+        getInitials()
+      )}
+    </div>
 
-                <input
-                  value={profileData.name}
-                  onChange={(e) =>
-                    setProfileData({
-                      ...profileData,
-                      name: e.target.value,
-                    })
-                  }
-                />
-              </div>
+    <div>
 
-              <div className="form-group">
-                <label>Email</label>
+      <div className="profile-photo-actions">
 
-                <input
-                  value={profileData.email}
-                  onChange={(e) =>
-                    setProfileData({
-                      ...profileData,
-                      email: e.target.value,
-                    })
-                  }
-                />
-              </div>
+        <label
+          htmlFor="profile-image"
+          className="change-photo-button"
+        >
+          Cambiar foto
+        </label>
 
-              <div className="form-group">
-                <label>Teléfono</label>
+        <input
+          id="profile-image"
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          onChange={handleImageChange}
+          hidden
+        />
 
-                <input
-                  value={profileData.phone}
-                  onChange={(e) =>
-                    setProfileData({
-                      ...profileData,
-                      phone: e.target.value,
-                    })
-                  }
-                />
-              </div>
+        {selectedImage && (
+          <button
+            type="button"
+            className="upload-photo-button"
+            onClick={handleUploadImage}
+            disabled={uploadingImage}
+          >
+            {uploadingImage ? "Subiendo..." : "Guardar foto"}
+          </button>
+        )}
 
-              <div className="form-group">
-                <label>País</label>
+      </div>
+    </div>
 
-                <input
-                  value={profileData.country}
-                  onChange={(e) =>
-                    setProfileData({
-                      ...profileData,
-                      country: e.target.value,
-                    })
-                  }
-                />
-              </div>
+  </div>
 
-              <div className="form-group">
-                <label>Ciudad</label>
+  <div className="profile-form">
 
-                <input
-                  value={profileData.city}
-                  onChange={(e) =>
-                    setProfileData({
-                      ...profileData,
-                      city: e.target.value,
-                    })
-                  }
-                />
-              </div>
+    <div className="form-group">
+      <label>Nombre</label>
 
-              <div className="form-group">
-                <label>Dirección</label>
+      <input
+        value={profileData.name}
+        onChange={(e) =>
+          setProfileData({
+            ...profileData,
+            name: e.target.value,
+          })
+        }
+      />
+    </div>
 
-                <input
-                  value={profileData.address}
-                  onChange={(e) =>
-                    setProfileData({
-                      ...profileData,
-                      address: e.target.value,
-                    })
-                  }
-                />
-              </div>
+    <div className="form-group">
+      <label>Email</label>
 
-              <button
-                type="button"
-                className="save-profile-button"
-                onClick={handleSaveProfile}
-              >
-                Guardar cambios
-              </button>
-            </div>
-          </section>
+      <input
+        value={profileData.email}
+        onChange={(e) =>
+          setProfileData({
+            ...profileData,
+            email: e.target.value,
+          })
+        }
+      />
+    </div>
+
+    <div className="form-group">
+      <label>Teléfono</label>
+
+      <input
+        value={profileData.phone}
+        onChange={(e) =>
+          setProfileData({
+            ...profileData,
+            phone: e.target.value,
+          })
+        }
+      />
+    </div>
+
+    <div className="form-group">
+      <label>País</label>
+
+      <input
+        value={profileData.country}
+        onChange={(e) =>
+          setProfileData({
+            ...profileData,
+            country: e.target.value,
+          })
+        }
+      />
+    </div>
+
+    <div className="form-group">
+      <label>Ciudad</label>
+
+      <input
+        value={profileData.city}
+        onChange={(e) =>
+          setProfileData({
+            ...profileData,
+            city: e.target.value,
+          })
+        }
+      />
+    </div>
+
+    <div className="form-group">
+      <label>Dirección</label>
+
+      <input
+        value={profileData.address}
+        onChange={(e) =>
+          setProfileData({
+            ...profileData,
+            address: e.target.value,
+          })
+        }
+      />
+    </div>
+
+    <button
+      type="button"
+      className="save-profile-button"
+      onClick={handleSaveProfile}
+    >
+      Guardar cambios
+    </button>
+
+  </div>
+
+</section>
         )}
       </div>
     </div>

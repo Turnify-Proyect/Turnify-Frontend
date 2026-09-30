@@ -272,6 +272,13 @@ export default function Login() {
                 <h1 className="loginTitle">Bienvenida de vuelta</h1>
                 <p className="loginSubtitle">Ingresá tus datos para continuar.</p>
 
+                  {location.state?.sessionExpired && (
+                    <div className="sessionExpiredMessage">
+                      <strong>Tu sesión ha expirado.</strong>
+                      <span> Iniciá sesión nuevamente para continuar.</span>
+                    </div>
+                  )}
+
                 <GoogleLogin
                   onSuccess={handleGoogleSuccess}
                   onError={() => setError("No se pudo iniciar sesión con Google.")}

@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import Navbar from "../../components/Header/Navbar";
 import { useAuth } from "../../context/AuthContext";
 import "./BookingPage.css";
+import { formatLocalDate } from "../../helpers/formatLocalDate";
 
 function BookingPage() {
   const navigate = useNavigate();
@@ -14,7 +15,8 @@ function BookingPage() {
   const [services, setServices] = useState([]);
   const [availabilities, setAvailabilities] = useState([]);
   const [bookingError, setBookingError] = useState("");
-  const [professionalAppointments, setProfessionalAppointments] = useState([]);
+  const [availableTimes, setAvailableTimes] = useState([]);
+  const [loadingTimes, setLoadingTimes] = useState(false);
   const API_URL = import.meta.env.VITE_API_URL;
 
   const { token } = useAuth();
@@ -90,43 +92,6 @@ function BookingPage() {
       getProfessionals();
     }, [selected.service]);
   
-  
-  //  useEffect(() => {
-  //  const getAvailabilities = async () => {
-  //    if (!selected.professional || !token) {
-  //      setAvailabilities([]);
-  //      return;
-  //    }
-  //  
-  //    try {
-  //      const response = await fetch(
-  //        `${API_URL}/availability/professional/${selected.professional}`,
-  //        {
-  //          headers: {
-  //            Authorization: `Bearer ${token}`,
-  //          },
-  //        }
-  //      );
-  //    
-  //      if (!response.ok) {
-  //        throw new Error(
-  //          "No se pudo obtener la disponibilidad del profesional"
-  //        );
-  //      }
-  //    
-  //      const data = await response.json();
-  //    
-  //      console.log("Disponibilidades:", data);
-  //    
-  //      setAvailabilities(data);
-  //    } catch (error) {
-  //      console.error(error);
-  //      setAvailabilities([]);
-  //    }
-  //  };
-//  
-  //  getAvailabilities();
-  //}, [selected.professional, token])//;
 
     const dayNames = [
     "sunday",
@@ -151,158 +116,106 @@ function BookingPage() {
   });
 
   useEffect(() => {
-  const getProfessionalData = async () => {
+  const getAvailabilities = async () => {
     if (!selected.professional || !token) {
       setAvailabilities([]);
-      setProfessionalAppointments([]);
       return;
     }
 
     try {
-      const [availabilityResponse, appointmentsResponse] =
-        await Promise.all([
-          fetch(
-            `${API_URL}/availability/professional/${selected.professional}`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          ),
+      const response = await fetch(
+        `${API_URL}/availability/professional/${selected.professional}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
-          fetch(
-            `${API_URL}/appointments/professional/${selected.professional}`
-          ),
-        ]);
-
-      if (!availabilityResponse.ok) {
+      if (!response.ok) {
         throw new Error(
           "No se pudo obtener la disponibilidad del profesional"
         );
       }
 
-      if (!appointmentsResponse.ok) {
-        throw new Error(
-          "No se pudieron obtener los turnos del profesional"
-        );
-      }
+      const data = await response.json();
 
-      const availabilityData =
-        await availabilityResponse.json();
-
-      const appointmentsData =
-        await appointmentsResponse.json();
-
-      console.log("Disponibilidades:", availabilityData);
-      console.log(
-        "Turnos del profesional:",
-        appointmentsData
-      );
-
-      setAvailabilities(availabilityData);
-      setProfessionalAppointments(appointmentsData);
+      setAvailabilities(data);
     } catch (error) {
       console.error(error);
       setAvailabilities([]);
-      setProfessionalAppointments([]);
     }
   };
 
-  getProfessionalData();
+  getAvailabilities();
 }, [selected.professional, token]);
       
 
-  const times = [
-    "09:00",
-    "09:30",
-    "10:00",
-    "10:30",
-    "11:00",
-    "14:00",
-    "14:30",
-    "15:00",
-    "15:30",
-    "16:00",
-    "16:30",
-    "17:00",
-  ]; 
+useEffect(() => {
+  const getAvailableTimes = async () => {
+    if (
+      !selected.professional ||
+      !selected.service ||
+      !selected.date ||
+      !token
+    ) {
+      setAvailableTimes([]);
+      return;
+    }
+    
+    setAvailableTimes([]);
+    setLoadingTimes(true);
+
+    try {
+      const params = new URLSearchParams({
+        professionalId: selected.professional,
+        serviceId: selected.service,
+        date: selected.date,
+      });
+
+      if (isRescheduling && appointmentId) {
+        params.append("appointmentId", appointmentId);
+      }
+
+      const response = await fetch(
+        `${API_URL}/appointments/available-slots?${params.toString()}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          "No se pudieron obtener los horarios disponibles"
+        );
+      }
+
+      const data = await response.json();
+
+      setAvailableTimes(data.slots || []);
+    } catch (error) {
+      console.error(error);
+      setAvailableTimes([]);
+    } finally {
+      setLoadingTimes(false);
+    }
+  };
+
+  getAvailableTimes();
+}, [
+  selected.professional,
+  selected.service,
+  selected.date,
+  token,
+  isRescheduling,
+  appointmentId,
+]);
 
   const selectedService = services.find(
   (service) => service.id === selected.service
   );
-
-  const availableTimes =
-  selected.date && selectedService
-    ? times.filter((time) => {
-        const selectedDate = new Date(`${selected.date}T12:00:00`);
-        const dayOfWeek = dayNames[selectedDate.getDay()];
-
-        const availability = availabilities.find(
-          (item) => item.dayOfWeek === dayOfWeek
-        );
-
-        if (!availability) return false;
-
-
-        const proposedStart = new Date(
-          `${selected.date}T${time}:00`
-        );
-
-        const proposedEnd = new Date(proposedStart);
-        proposedEnd.setMinutes(
-          proposedEnd.getMinutes() + selectedService.durationMinutes
-        );
-
-        const availabilityEnd = new Date(
-          `${selected.date}T${availability.endTime}`
-        );
-
-        // El servicio completo debe entrar dentro de la disponibilidad
-        if (proposedEnd > availabilityEnd) {
-          return false;
-        }
-
-        const now = new Date();
-
-        const hasOverlap = professionalAppointments.some(
-          (appointment) => {
-            // Al reprogramar, no debe bloquearse contra sí mismo
-            if (
-              isRescheduling &&
-              appointment.id === appointmentId
-            ) {
-              return false;
-            }
-
-            const blocksSlot =
-              appointment.status === "confirmed" ||
-              (appointment.status === "pending" &&
-                appointment.expiresAt &&
-                new Date(appointment.expiresAt) > now);
-
-            if (!blocksSlot) {
-              return false;
-            }
-
-            const appointmentStart = new Date(
-              appointment.startAt
-            );
-            const appointmentEnd = new Date(
-              appointment.endAt
-            );
-
-            return (
-              proposedStart < appointmentEnd &&
-              proposedEnd > appointmentStart
-            );
-          }
-        );
-
-        return !hasOverlap;
-      })
-    : [];
-
-  
 
   const selectedProfessional = professionals.find(
   (item) => item.professionalId === selected.professional
@@ -310,25 +223,55 @@ function BookingPage() {
 
   const currentBookingItem =
   selectedService &&
-  selectedProfessional &&
+  selected.professional &&
   selected.date &&
   selected.time
     ? {
         serviceId: selected.service,
         serviceName: selectedService.name,
         price: Number(selectedService.price),
+        durationMinutes: selectedService.durationMinutes,
 
         professionalId: selected.professional,
         professionalName:
-          selectedProfessional.professional?.user?.name ||
+          selectedProfessional?.professional?.user?.name ||
           "Profesional",
 
         date: selected.date,
         time: selected.time,
 
-        startAt: `${selected.date}T${selected.time}:00`,
+        startAt: `${selected.date}T${selected.time}:00-03:00`,
       }
     : null;
+
+const displayAvailableTimes = availableTimes.filter((time) => {
+  if (!selectedService || !selected.date) {
+    return false;
+  }
+
+  const candidateStart = new Date(
+    `${selected.date}T${time}:00-03:00`
+  );
+
+  const candidateEnd = new Date(
+    candidateStart.getTime() +
+      selectedService.durationMinutes * 60 * 1000
+  );
+
+  return !bookingItems.some((item) => {
+    const itemStart = new Date(item.startAt);
+
+    const itemEnd = new Date(
+      itemStart.getTime() +
+        item.durationMinutes * 60 * 1000
+    );
+
+    return (
+      candidateStart < itemEnd &&
+      candidateEnd > itemStart
+    );
+  });
+});
 
 const allBookingItems = [
   ...bookingItems,
@@ -546,6 +489,14 @@ async function handleConfirm() {
   );
 }}
 
+const canContinue =
+  (step === 1 && !!selected.service) ||
+  (step === 2 && !!selected.professional) ||
+  (step === 3 &&
+    !!selected.date &&
+    !!selected.time &&
+    !loadingTimes);
+
   return (
     <>
       <Navbar />
@@ -618,7 +569,7 @@ async function handleConfirm() {
                       }
                     >
                         <span className="bookingServiceIcon">
-                          💆
+                          {service.category?.icon || "✨"}
                         </span>
 
                         <span className="bookingOptionName">
@@ -701,8 +652,7 @@ async function handleConfirm() {
 
                   <div className="bookingDates">
                     {days.map((date) => {
-                      const dateString =
-                        date.toISOString().split("T")[0];
+                      const dateString = formatLocalDate(date);
 
                       const dayName = date.toLocaleDateString(
                         "es-AR",
@@ -742,25 +692,37 @@ async function handleConfirm() {
                   </p>
 
                   <div className="bookingTimes">
-                    {availableTimes.map((time) => (
-                      <button
-                        type="button"
-                        key={time}
-                        className={`bookingTimeButton ${
-                          selected.time === time
-                            ? "selected"
-                            : ""
-                        }`}
-                        onClick={() =>
-                          setSelected((prev) => ({
-                            ...prev,
-                            time,
-                          }))
-                        }
-                      >
-                        {time}
-                      </button>
-                    ))}
+                    {loadingTimes ? (
+                      <p className="bookingAvailabilityMessage">
+                        Buscando horarios disponibles...
+                      </p>
+                    ) : displayAvailableTimes.length > 0 ? (
+                      displayAvailableTimes.map((time) => (
+                        <button
+                          type="button"
+                          key={time}
+                          className={`bookingTimeButton ${
+                            selected.time === time ? "selected" : ""
+                          }`}
+                          onClick={() =>
+                            setSelected((prev) => ({
+                              ...prev,
+                              time,
+                            }))
+                          }
+                        >
+                          {time}
+                        </button>
+                      ))
+                    ) : selected.date ? (
+                      <p className="bookingAvailabilityMessage">
+                        No quedan horarios disponibles para esta fecha.
+                      </p>
+                    ) : (
+                      <p className="bookingAvailabilityMessage">
+                        Seleccioná una fecha para ver los horarios disponibles.
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -963,6 +925,7 @@ async function handleConfirm() {
     type="button"
     className="bookingNextButton"
     onClick={handleNext}
+    disabled={!canContinue}
   >
     Siguiente
   </button>

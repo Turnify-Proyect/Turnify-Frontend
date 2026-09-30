@@ -8,23 +8,17 @@ import {
   deactivateServiceApi,
   reactivateServiceApi,
   uploadServiceImageApi,
+  fetchCategories,
+  createCategoryApi,
+  deactivateCategoryApi,
 } from "./adminServicesApi";
 
 import "./AdminServices.css";
 
-const SERVICE_CATEGORIES = [
-  { value: "Masajes", label: "Masajes" },
-  { value: "Faciales", label: "Faciales" },
-  { value: "Uñas", label: "Uñas" },
-  { value: "Pedicuría", label: "Pedicuría" },
-  { value: "Cabello", label: "Cabello" },
-  { value: "Spa", label: "Spa" },
-];
-
 const EMPTY_FORM = {
   name: "",
   description: "",
-  category: "",
+  categoryId: "",
   price: "",
   durationMinutes: "",
   imageUrl: "",
@@ -34,6 +28,7 @@ const AdminServices = () => {
   const { token } = useAuth();
 
   const [services, setServices] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -59,6 +54,79 @@ const AdminServices = () => {
   const [saving, setSaving] =
     useState(false);
 
+  const [showNewCategory, setShowNewCategory] =
+  useState(false);
+
+  const [newCategoryName, setNewCategoryName] =
+    useState("");
+
+  const [newCategoryIcon, setNewCategoryIcon] =
+    useState("");
+
+  const [savingCategory, setSavingCategory] =
+    useState(false);
+
+  const getCategories = async () => {
+  try {
+    const data = await fetchCategories();
+    setCategories(data);
+  } catch (err) {
+    setError(
+      err.message ||
+        "Ocurrió un error al obtener las categorías."
+    );
+  }
+};
+  const [isUploading, setIsUploading] = useState(false);
+
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    setError("");
+
+
+    const UPLOAD_PRESET = import.meta.env.VITE_UPLOAD_PRESET;
+    const CLOUD_NAME = import.meta.env.VITE_CLOUD_NAME;
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", UPLOAD_PRESET);
+
+    try {
+      const response = await fetch(
+        `https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+const data = await response.json();
+
+
+      if (data.secure_url) {
+
+        setForm((current) => ({
+          ...current,
+          imageUrl: data.secure_url,
+        }));
+        return data.secure_url;
+      } else {
+        setError("No se pudo procesar la respuesta de la imagen.");
+        return null;
+      }
+    } catch (err) {
+      console.error("Error Cloudinary:", err);
+      setError("Error al subir la imagen al servidor.");
+      return null;
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+
   const getServices = async () => {
     try {
       setError("");
@@ -78,25 +146,21 @@ const AdminServices = () => {
   };
 
   useEffect(() => {
-    getServices();
-  }, [token]);
+  getServices();
+  getCategories();
+}, [token]);
 
   const fillForm = (service) => {
-    setForm({
-      name: service.name || "",
-      description:
-        service.description || "",
-      category:
-        service.category || "",
-      price:
-        service.price?.toString() || "",
-      durationMinutes:
-        service.durationMinutes?.toString() ||
-        "",
-      imageUrl:
-        service.imageUrl || "",
-    });
-  };
+  setForm({
+    name: service.name || "",
+    description: service.description || "",
+    categoryId: service.category?.id || "",
+    price: service.price?.toString() || "",
+    durationMinutes:
+      service.durationMinutes?.toString() || "",
+    imageUrl: service.imageUrl || "",
+  });
+};
 
   const handleFormChange = (e) => {
     const { name, value } = e.target;
@@ -107,6 +171,103 @@ const AdminServices = () => {
     }));
   };
 
+  const handleCategoryChange = (e) => {
+    const value = e.target.value;
+
+    if (value === "__new__") {
+      setShowNewCategory(true);
+
+      setForm((current) => ({
+        ...current,
+        categoryId: "",
+      }));
+
+      return;
+    }
+
+    setShowNewCategory(false);
+    setNewCategoryName("");
+    setNewCategoryIcon("");
+
+    setForm((current) => ({
+      ...current,
+      categoryId: value,
+    }));
+  };
+
+  const handleCreateCategory = async () => {
+  const name = newCategoryName.trim();
+
+  if (!name) {
+    setError(
+      "Ingresá el nombre de la categoría."
+    );
+    return;
+  }
+
+  try {
+    setSavingCategory(true);
+    setError("");
+
+    const created =
+      await createCategoryApi(
+        {
+          name,
+          icon:
+            newCategoryIcon.trim() ||
+            undefined,
+        },
+        token
+      );
+
+    await getCategories();
+
+    setForm((current) => ({
+      ...current,
+      categoryId: created.id,
+    }));
+
+    setNewCategoryName("");
+    setNewCategoryIcon("");
+    setShowNewCategory(false);
+  } catch (err) {
+    setError(
+      err.message ||
+        "No se pudo crear la categoría."
+    );
+  } finally {
+    setSavingCategory(false);
+  }
+};
+
+const handleDeactivateCategory = async () => {
+  if (!form.categoryId) return;
+
+  try {
+    setSavingCategory(true);
+    setError("");
+
+    await deactivateCategoryApi(
+      form.categoryId,
+      token
+    );
+
+    await getCategories();
+
+    setForm((current) => ({
+      ...current,
+      categoryId: "",
+    }));
+  } catch (err) {
+    setError(
+      err.message ||
+        "No se pudo desactivar la categoría."
+    );
+  } finally {
+    setSavingCategory(false);
+  }
+};
+
   const validateForm = () => {
     if (!form.name.trim()) {
       setError(
@@ -115,10 +276,11 @@ const AdminServices = () => {
       return false;
     }
 
-    if (!form.category) {
+    if (!form.categoryId) {
       setError(
         "Seleccioná una categoría."
       );
+    
       return false;
     }
 
@@ -151,7 +313,7 @@ const AdminServices = () => {
     description:
       form.description.trim() || undefined,
 
-    category: form.category,
+    categoryId: form.categoryId,
 
     // DTO espera string
     price: String(form.price),
@@ -173,6 +335,9 @@ const AdminServices = () => {
     setError("");
     setForm(EMPTY_FORM);
     setSelectedFile(null);
+    setShowNewCategory(false);
+    setNewCategoryName("");
+    setNewCategoryIcon("");
     setShowCreateModal(true);
   };
 
@@ -180,12 +345,24 @@ const AdminServices = () => {
     setShowCreateModal(false);
     setForm(EMPTY_FORM);
     setSelectedFile(null);
+    setShowNewCategory(false);
+    setNewCategoryName("");
+    setNewCategoryIcon("");
     setError("");
   };
 
   const createService = async () => {
     if (!validateForm()) return;
 
+    if (isUploading) {
+      setError("Esperá a que termine de subir la imagen.");
+    return;
+    }
+    if (!form.imageUrl) {
+    setError("Subí una imagen antes de crear el servicio.");
+    return;
+  }
+    
     try {
       setSaving(true);
       setError("");
@@ -235,6 +412,9 @@ const AdminServices = () => {
     setSelectedFile(null);
     setIsEditing(false);
     setForm(EMPTY_FORM);
+    setShowNewCategory(false);
+    setNewCategoryName("");
+    setNewCategoryIcon("");
     setError("");
   };
 
@@ -263,7 +443,7 @@ const AdminServices = () => {
         let updated =
           await updateServiceApi(
             selectedService.id,
-            buildPayload(),
+            buildPayload(),            
             token
           );
 
@@ -342,7 +522,7 @@ const AdminServices = () => {
         service.name
           ?.toLowerCase()
           .includes(value) ||
-        service.category
+        service.category?.name
           ?.toLowerCase()
           .includes(value) ||
         service.description
@@ -401,26 +581,77 @@ const AdminServices = () => {
       <label>
         Categoría *
 
+        <div className="category-select-row">
         <select
-          name="category"
-          value={form.category}
-          onChange={handleFormChange}
+          name="categoryId"
+          value={form.categoryId}
+          onChange={handleCategoryChange}
         >
           <option value="">
             Seleccionar categoría
           </option>
 
-          {SERVICE_CATEGORIES.map(
-            (category) => (
-              <option
-                key={category.value}
-                value={category.value}
+          {categories.map((category) => (
+            <option
+              key={category.id}
+              value={category.id}
+            >
+              {category.name}
+            </option>
+          ))}
+          <option value="__new__">
+            + Nueva categoría
+          </option>
+          </select>
+
+          {form.categoryId && (
+              <button
+                type="button"
+                className="category-delete-button"
+                onClick={handleDeactivateCategory}
+                disabled={savingCategory}
+                title="Desactivar categoría"
+                aria-label="Desactivar categoría"
               >
-                {category.label}
-              </option>
-            )
-          )}
-        </select>
+                🗑
+              </button>
+            )}
+          </div>
+
+          {showNewCategory && (
+              <div className="category-inline-create">
+                <input
+                  type="text"
+                  placeholder="Nombre de la categoría"
+                  value={newCategoryName}
+                  onChange={(e) =>
+                    setNewCategoryName(e.target.value)
+                  }
+                  maxLength={100}
+                />
+
+                <input
+                  type="text"
+                  placeholder="Ícono opcional"
+                  value={newCategoryIcon}
+                  onChange={(e) =>
+                    setNewCategoryIcon(e.target.value)
+                  }
+                  maxLength={20}
+                />
+
+                <button
+                  type="button"
+                  className="category-create-button"
+                  onClick={handleCreateCategory}
+                  disabled={savingCategory}
+                >
+                  {savingCategory
+                    ? "Creando..."
+                    : "Crear categoría"}
+                </button>
+              </div>
+            )}
       </label>
 
       <div className="service-form-row">
@@ -454,15 +685,15 @@ const AdminServices = () => {
       </div>
 
       <label>
-        Descripción
+  Descripción
 
-        <textarea
-          name="description"
-          value={form.description}
-          onChange={handleFormChange}
-          rows="4"
-        />
-      </label>
+  <textarea
+    name="description"
+    value={form.description}
+    onChange={handleFormChange}
+    rows="4"
+  />
+</label>
 
       <label>
         Subir archivo de imagen (Cloudinary)
@@ -603,8 +834,7 @@ const AdminServices = () => {
                     </td>
 
                     <td>
-                      {service.category ||
-                        "-"}
+                      {service.category?.name || "-"}
                     </td>
 
                     <td>
@@ -743,8 +973,7 @@ const AdminServices = () => {
                         Categoría
                       </span>
                       <strong>
-                        {selectedService.category ||
-                          "-"}
+                        {selectedService.category?.name || "-"}
                       </strong>
                     </div>
 
@@ -889,7 +1118,6 @@ const AdminServices = () => {
                   closeCreateModal
                 }
               >
-                ×
               </button>
             </div>
 
@@ -921,7 +1149,7 @@ const AdminServices = () => {
                 type="button"
                 className="admin-action-primary"
                 onClick={createService}
-                disabled={saving}
+                disabled={isUploading || saving}
               >
                 {saving
                   ? "Creando..."

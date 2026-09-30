@@ -18,7 +18,7 @@ const ServiceCard = ({ service }) => {
 
       <div className="service-card-content">
         <span className="service-card-category">
-          {service.category}
+          {service.category?.name || "-"}
         </span>
 
         <h3>{service.name}</h3>
