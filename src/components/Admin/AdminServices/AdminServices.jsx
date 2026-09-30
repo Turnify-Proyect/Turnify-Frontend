@@ -7,6 +7,7 @@ import {
   updateServiceApi,
   deactivateServiceApi,
   reactivateServiceApi,
+  uploadServiceImageApi,
   fetchCategories,
   createCategoryApi,
   deactivateCategoryApi,
@@ -46,6 +47,9 @@ const AdminServices = () => {
 
   const [form, setForm] =
     useState(EMPTY_FORM);
+
+  const [selectedFile, setSelectedFile] =
+    useState(null);
 
   const [saving, setSaving] =
     useState(false);
@@ -328,22 +332,24 @@ const handleDeactivateCategory = async () => {
   // =========================
 
   const openCreateModal = () => {
-  setError("");
-  setForm(EMPTY_FORM);
-  setShowNewCategory(false);
-  setNewCategoryName("");
-  setNewCategoryIcon("");
-  setShowCreateModal(true);
-};
+    setError("");
+    setForm(EMPTY_FORM);
+    setSelectedFile(null);
+    setShowNewCategory(false);
+    setNewCategoryName("");
+    setNewCategoryIcon("");
+    setShowCreateModal(true);
+  };
 
   const closeCreateModal = () => {
-  setShowCreateModal(false);
-  setForm(EMPTY_FORM);
-  setShowNewCategory(false);
-  setNewCategoryName("");
-  setNewCategoryIcon("");
-  setError("");
-};
+    setShowCreateModal(false);
+    setForm(EMPTY_FORM);
+    setSelectedFile(null);
+    setShowNewCategory(false);
+    setNewCategoryName("");
+    setNewCategoryIcon("");
+    setError("");
+  };
 
   const createService = async () => {
     if (!validateForm()) return;
@@ -361,17 +367,18 @@ const handleDeactivateCategory = async () => {
       setSaving(true);
       setError("");
 
-          const payload = {
-      ...form,
-      durationMinutes: Number(form.durationMinutes),
-    };
-
-
-
-      await createServiceApi(
-         buildPayload(),
-          token
+      const created = await createServiceApi(
+        buildPayload(),
+        token
       );
+
+      if (selectedFile && created?.id) {
+        await uploadServiceImageApi(
+          created.id,
+          selectedFile,
+          token
+        );
+      }
 
       await getServices();
 
@@ -395,28 +402,32 @@ const handleDeactivateCategory = async () => {
   ) => {
     setError("");
     setSelectedService(service);
+    setSelectedFile(null);
     setIsEditing(false);
     fillForm(service);
   };
 
   const closeServiceModal = () => {
-  setSelectedService(null);
-  setIsEditing(false);
-  setForm(EMPTY_FORM);
-  setShowNewCategory(false);
-  setNewCategoryName("");
-  setNewCategoryIcon("");
-  setError("");
-};
+    setSelectedService(null);
+    setSelectedFile(null);
+    setIsEditing(false);
+    setForm(EMPTY_FORM);
+    setShowNewCategory(false);
+    setNewCategoryName("");
+    setNewCategoryIcon("");
+    setError("");
+  };
 
   const startEditing = () => {
     fillForm(selectedService);
+    setSelectedFile(null);
     setError("");
     setIsEditing(true);
   };
 
   const cancelEditing = () => {
     fillForm(selectedService);
+    setSelectedFile(null);
     setError("");
     setIsEditing(false);
   };
@@ -429,14 +440,24 @@ const handleDeactivateCategory = async () => {
         setSaving(true);
         setError("");
 
-        const updated =
+        let updated =
           await updateServiceApi(
             selectedService.id,
             buildPayload(),            
             token
           );
 
+        if (selectedFile && selectedService?.id) {
+          updated =
+            await uploadServiceImageApi(
+              selectedService.id,
+              selectedFile,
+              token
+            );
+        }
+
         setSelectedService(updated);
+        setSelectedFile(null);
 
         await getServices();
 
@@ -674,56 +695,51 @@ const handleDeactivateCategory = async () => {
   />
 </label>
 
-<div className="service-image-field">
-  <span className="service-image-label">
-    Imagen del servicio
-  </span>
+      <div className="service-image-field">
+        <label className="service-image-label">
+          Imagen del servicio (Cloudinary)
+        </label>
 
-  <input
-    type="file"
-    id="serviceImageUpload"
-    accept="image/*"
-    onChange={handleImageUpload}
-    disabled={isUploading || saving}
-    hidden
-  />
+        <input
+          type="file"
+          id="serviceImageFileInput"
+          accept="image/*"
+          onChange={(e) =>
+            setSelectedFile(
+              e.target.files[0] || null
+            )
+          }
+          hidden
+        />
 
-  <label
-    htmlFor="serviceImageUpload"
-    className={`service-image-upload-button ${
-      isUploading || saving ? "disabled" : ""
-    }`}
-  >
-    <span className="service-image-upload-icon">
-      ↑
-    </span>
+        <label
+          htmlFor="serviceImageFileInput"
+          className="service-image-upload-button"
+        >
+          <span className="service-image-upload-icon">
+            📷
+          </span>
+          <span>
+            {selectedFile
+              ? `✓ ${selectedFile.name}`
+              : "Seleccionar imagen desde tu equipo"}
+          </span>
+        </label>
+      </div>
 
-    {isUploading
-      ? "Subiendo imagen..."
-      : "Seleccionar imagen"}
-  </label>
+      <label>
+        O pegar URL de imagen externa
 
-  {isUploading && (
-    <p className="service-image-message">
-      Subiendo archivo...
-    </p>
-  )}
-
-  {form.imageUrl && (
-    <div className="service-image-preview">
-      <img
-        src={form.imageUrl}
-        alt="Vista previa del servicio"
-      />
-
-      <span>
-        Imagen lista para guardar
-      </span>
+        <input
+          type="url"
+          name="imageUrl"
+          value={form.imageUrl}
+          onChange={handleFormChange}
+          placeholder="https://..."
+        />
+      </label>
     </div>
-  )}
-</div>
-</div>
-);
+  );
 
   return (
     <div className="admin-page">

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { toast } from "react-toastify";
 import Navbar from "../../components/Header/Navbar";
 import "./ClientDashboard.css";
 
@@ -211,9 +212,12 @@ const handleUploadImage = async () => {
          ...profileData,
        }));    
 
-       alert("Perfil actualizado correctamente");
+       toast.success("¡Perfil actualizado correctamente!");
      } catch (error) {
-       alert(error.message);
+       const formattedMessage = Array.isArray(error.message)
+         ? error.message.join(". ")
+         : String(error.message || "").replace(/,/g, ". ");
+       toast.error(formattedMessage || "No se pudo actualizar el perfil.");
      }
     };
 
@@ -246,9 +250,9 @@ const handleUploadImage = async () => {
         )
       );
 
-      alert("Turno cancelado correctamente");
+      toast.info("Turno cancelado correctamente");
     } catch (error) {
-      alert(error.message);
+      toast.error(error.message || "Error al cancelar el turno");
     }
   };
 

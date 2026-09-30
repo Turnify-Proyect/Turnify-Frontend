@@ -9,135 +9,114 @@ const getErrorMessage = (data, fallback) => {
 };
 
 export const fetchAllServices = async (token) => {
-  const response = await fetch(
-    `${API_URL}/services/all`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
+  const response = await fetch(`${API_URL}/services/all`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
 
   const data = await response.json();
 
   if (!response.ok) {
-
-  console.log("Detalle del error:", data); // 👈 acá
-
-
     throw new Error(
-      getErrorMessage(
-        data,
-        "No se pudieron obtener los servicios."
-      )
+      getErrorMessage(data, "No se pudieron obtener los servicios.")
     );
   }
 
   return data;
 };
 
-export const createServiceApi = async (
-  serviceData,
-  token
-) => {
-  const response = await fetch(
-    `${API_URL}/services`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(serviceData),
-    }
-  );
+export const createServiceApi = async (serviceData, token) => {
+  const response = await fetch(`${API_URL}/services`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(serviceData),
+  });
 
   const data = await response.json();
 
   if (!response.ok) {
     throw new Error(
-      getErrorMessage(
-        data,
-        "No se pudo crear el servicio."
-      )
+      getErrorMessage(data, "No se pudo crear el servicio.")
     );
   }
 
   return data;
 };
 
-export const updateServiceApi = async (
-  id,
-  serviceData,
-  token
-) => {
-  const response = await fetch(
-    `${API_URL}/services/${id}`,
-    {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(serviceData),
-    }
-  );
+export const updateServiceApi = async (id, serviceData, token) => {
+  const response = await fetch(`${API_URL}/services/${id}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(serviceData),
+  });
 
   const data = await response.json();
 
   if (!response.ok) {
     throw new Error(
-      getErrorMessage(
-        data,
-        "No se pudo actualizar el servicio."
-      )
+      getErrorMessage(data, "No se pudo actualizar el servicio.")
     );
   }
 
   return data;
 };
 
-export const deactivateServiceApi = async (
-  id,
-  token
-) => {
-  const response = await fetch(
-    `${API_URL}/services/${id}`,
-    {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
+export const deactivateServiceApi = async (id, token) => {
+  const response = await fetch(`${API_URL}/services/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
 
   const data = await response.json();
 
   if (!response.ok) {
     throw new Error(
-      getErrorMessage(
-        data,
-        "No se pudo desactivar el servicio."
-      )
+      getErrorMessage(data, "No se pudo desactivar el servicio.")
     );
   }
 
   return data;
 };
 
-export const reactivateServiceApi = async (
-  id,
-  token
-) => {
-  const response = await fetch(
-    `${API_URL}/services/${id}/reactivate`,
-    {
-      method: "PATCH",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
+export const reactivateServiceApi = async (id, token) => {
+  const response = await fetch(`${API_URL}/services/${id}/reactivate`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      getErrorMessage(data, "No se pudo reactivar el servicio.")
+    );
+  }
+
+  return data;
+};
+
+export const uploadServiceImageApi = async (id, file, token) => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch(`${API_URL}/services/${id}/upload-image`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: formData,
+  });
 
   const data = await response.json();
 
@@ -145,7 +124,7 @@ export const reactivateServiceApi = async (
     throw new Error(
       getErrorMessage(
         data,
-        "No se pudo reactivar el servicio."
+        "No se pudo subir la imagen del servicio a Cloudinary."
       )
     );
   }
@@ -154,104 +133,71 @@ export const reactivateServiceApi = async (
 };
 
 export const fetchCategories = async () => {
-  const response = await fetch(
-    `${API_URL}/categories`
-  );
-
+  const response = await fetch(`${API_URL}/categories`);
   const data = await response.json();
 
   if (!response.ok) {
     throw new Error(
-      getErrorMessage(
-        data,
-        "No se pudieron obtener las categorías."
-      )
+      getErrorMessage(data, "No se pudieron obtener las categorías.")
     );
   }
 
   return data;
 };
 
-export const createCategoryApi = async (
-  categoryData,
-  token
-) => {
-  const response = await fetch(
-    `${API_URL}/categories`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(categoryData),
-    }
-  );
+export const createCategoryApi = async (categoryData, token) => {
+  const response = await fetch(`${API_URL}/categories`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(categoryData),
+  });
 
   const data = await response.json();
 
   if (!response.ok) {
     throw new Error(
-      getErrorMessage(
-        data,
-        "No se pudo crear la categoría."
-      )
+      getErrorMessage(data, "No se pudo crear la categoría.")
     );
   }
 
   return data;
 };
 
-export const deactivateCategoryApi = async (
-  id,
-  token
-) => {
-  const response = await fetch(
-    `${API_URL}/categories/${id}`,
-    {
-      method: "DELETE",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
+export const deactivateCategoryApi = async (id, token) => {
+  const response = await fetch(`${API_URL}/categories/${id}`, {
+    method: "DELETE",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
 
   const data = await response.json();
 
   if (!response.ok) {
     throw new Error(
-      getErrorMessage(
-        data,
-        "No se pudo desactivar la categoría."
-      )
+      getErrorMessage(data, "No se pudo desactivar la categoría.")
     );
   }
 
   return data;
 };
 
-export const reactivateCategoryApi = async (
-  id,
-  token
-) => {
-  const response = await fetch(
-    `${API_URL}/categories/${id}/reactivate`,
-    {
-      method: "PATCH",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
+export const reactivateCategoryApi = async (id, token) => {
+  const response = await fetch(`${API_URL}/categories/${id}/reactivate`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
 
   const data = await response.json();
 
   if (!response.ok) {
     throw new Error(
-      getErrorMessage(
-        data,
-        "No se pudo reactivar la categoría."
-      )
+      getErrorMessage(data, "No se pudo reactivar la categoría.")
     );
   }
 
