@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../../context/AuthContext";
+import { DayPicker } from "@daypicker/react";
+import { es } from "@daypicker/react/locale";
+import "@daypicker/react/style.css";
+import { toast } from "react-toastify";
 
 import {
   fetchProfessionals,
@@ -7,9 +11,14 @@ import {
   createAvailabilityApi,
   updateAvailabilityApi,
   deleteAvailabilityApi,
+  fetchProfessionalBlocks,
+  createProfessionalBlock,
+  deleteProfessionalBlock,
 } from "./adminAvailabilityApi";
 
 import "./AdminAvailability.css";
+
+import {formatLocalDate, parseLocalDate } from "../../../helpers/formatLocalDate"
 
 const DAYS = [
   { value: "monday", label: "Lunes" },
@@ -32,7 +41,16 @@ const AdminAvailability = () => {
   const [error, setError] = useState("");
   const [pendingProfessionalId, setPendingProfessionalId] = useState("");
   const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
-
+  const [blocks, setBlocks] = useState([]);
+  const [selectedRange, setSelectedRange] = useState(undefined);
+  const [blockReason, setBlockReason] = useState("");
+  const [loadingBlocks, setLoadingBlocks] = useState(false);
+  const [savingBlock, setSavingBlock] = useState(false);
+  const [activeSection, setActiveSection] = useState("schedule");
+  const [selectedScheduleDays, setSelectedScheduleDays] = useState([]);
+  const [bulkStartTime, setBulkStartTime] = useState("09:00");
+  const [bulkEndTime, setBulkEndTime] = useState("13:00");
+  const [savingBulk, setSavingBulk] = useState(false);
   const hasUnsavedChanges = availability.some((item) => item.isNew || item.isDirty);
 
 
@@ -100,15 +118,137 @@ const AdminAvailability = () => {
     }
   };
 
+  const toggleScheduleDay = (dayValue) => {
+    setSelectedScheduleDays((current) =>
+      current.includes(dayValue)
+        ? current.filter(
+            (day) => day !== dayValue
+          )
+        : [...current, dayValue]
+    );
+  };
+
+  const saveBulkAvailability = async () => {
+    if (hasUnsavedChanges) {
+      setError(
+        "Guardá o eliminá primero los cambios individuales pendientes."
+      );
+      return;
+    }
+
+    if (selectedScheduleDays.length === 0) {
+      const message =
+        "Seleccioná al menos un día de la semana.";
+
+      setError(message);
+      toast.warning(message);
+
+      return;
+    }
+
+    if (!bulkStartTime || !bulkEndTime) {
+      setError(
+        "Completá el horario de inicio y finalización."
+      );
+      return;
+    }
+
+    if (bulkStartTime >= bulkEndTime) {
+      setError(
+        "El horario de inicio debe ser anterior al horario de finalización."
+      );
+      return;
+    }
+
+    const dayWithOverlap =
+      selectedScheduleDays.find((dayValue) => {
+        const daySlots =
+          availabilityByDay[dayValue] || [];
+
+        return daySlots.some((item) => {
+          const existingStart =
+            item.startTime.slice(0, 5);
+
+          const existingEnd =
+            item.endTime.slice(0, 5);
+
+          return (
+            bulkStartTime < existingEnd &&
+            bulkEndTime > existingStart
+          );
+        });
+      });
+
+    if (dayWithOverlap) {
+      const dayLabel = DAYS.find(
+        (day) => day.value === dayWithOverlap
+      )?.label;
+
+      const message = `La franja se superpone con un horario existente en ${dayLabel}.`;
+      setError(message);
+      toast.error(message);
+
+      return;
+    }
+
+    try {
+      setSavingBulk(true);
+      setError("");
+
+      await Promise.all(
+        selectedScheduleDays.map((dayOfWeek) =>
+          createAvailabilityApi(
+            selectedProfessionalId,
+            {
+              dayOfWeek,
+              startTime: bulkStartTime,
+              endTime: bulkEndTime,
+            },
+            token
+          )
+        )
+      );
+
+      await getAvailability(
+        selectedProfessionalId
+      );
+
+      setSelectedScheduleDays([]);
+      toast.success("Franja horaria asignada correctamente.");
+
+    } catch (err) {
+      await getAvailability(
+        selectedProfessionalId
+      );
+
+      setError(
+        err.message ||
+          "No se pudo asignar la franja horaria."
+      );
+    } finally {
+      setSavingBulk(false);
+    }
+  };
+
   const changeProfessional = async (professionalId) => {
-    setSelectedProfessionalId(professionalId);
+    setSelectedProfessionalId(
+      professionalId
+    );
+
     setAvailability([]);
+    setBlocks([]);
+    setSelectedRange(undefined);
+    setBlockReason("");
+
     setError("");
     setShowUnsavedWarning(false);
     setPendingProfessionalId("");
 
     if (professionalId) {
-      await getAvailability(professionalId);
+      await Promise.all([
+        getAvailability(professionalId),
+        getBlocks(professionalId),
+      ]);
     }
   };
 
@@ -244,16 +384,20 @@ const AdminAvailability = () => {
     const endTime = item.endTime?.slice(0, 5);
 
     if (!startTime || !endTime) {
-      setError(
-        "Ingresá el horario de inicio y finalización."
-      );
+      const message =
+        "Ingresá el horario de inicio y finalización.";
+
+      setError(message);
+      toast.warning(message);
       return false;
     }
 
     if (startTime >= endTime) {
-      setError(
-        "El horario de finalización debe ser posterior al horario de inicio."
-      );
+      const message =
+        "El horario de finalización debe ser posterior al horario de inicio.";
+
+      setError(message);
+      toast.warning(message);
       return false;
     }
 
@@ -292,9 +436,11 @@ const AdminAvailability = () => {
     );
 
     if (overlapping) {
-      setError(
-        "Esta franja se superpone con otro horario configurado para el mismo día."
-      );
+       const message =
+         "La franja horaria se superpone con otro horario configurado para ese día.";
+
+       setError(message);
+       toast.error(message);
       return false;
     }
 
@@ -331,16 +477,22 @@ const AdminAvailability = () => {
               : availability
           )
         );
+
+        toast.success(
+        "Horario agregado correctamente."
+      );
       
           }
         } catch (err) {
-          setError(
-            err.message ||
-              "No se pudo guardar el horario."
-    );
-  } finally {
-    setSavingId(null);
-  }
+       const message =
+         err.message ||
+         "No se pudo guardar el horario.";
+
+       setError(message);
+       toast.error(message);
+     } finally {
+       setSavingId(null);
+     }
 };
 
   const removeAvailabilitySlot = async (item) => {
@@ -369,55 +521,166 @@ const AdminAvailability = () => {
       await getAvailability(
         selectedProfessionalId
       );
+      toast.success("Horario eliminado correctamente.");
     } catch (err) {
-      setError(
+      const message =
         err.message ||
-          "No se pudo eliminar la disponibilidad."
-      );
+        "No se pudo eliminar el horario.";
+
+      setError(message);
+      toast.error(message);
     } finally {
       setSavingId(null);
     }
   };
 
+  const getBlocks = async (professionalId) => {
+  if (!professionalId) {
+    setBlocks([]);
+    return;
+  }
+
+  try {
+    setLoadingBlocks(true);
+    setError("");
+
+    const data =
+      await fetchProfessionalBlocks(
+        professionalId,
+        token
+      );
+
+    setBlocks(
+      Array.isArray(data) ? data : []
+    );
+  } catch (err) {
+    setError(
+      err.message ||
+        "No se pudieron obtener los bloqueos."
+    );
+
+    setBlocks([]);
+  } finally {
+    setLoadingBlocks(false);
+  }
+};
+
+
+const saveBlock = async () => {
+    if (!selectedRange?.from) {
+    setError(
+      "Seleccioná al menos una fecha para crear el bloqueo."
+    );
+    return;
+  }
+
+    const startDate = selectedRange.from;
+    const endDate =
+    selectedRange.to || selectedRange.from;
+
+  try {
+    setSavingBlock(true);
+    setError("");
+
+      await createProfessionalBlock(
+      selectedProfessionalId,
+      {
+        startDate: formatLocalDate(startDate),
+        endDate: formatLocalDate(endDate),
+        reason:
+          blockReason.trim() || undefined,
+      },
+      token
+    );
+
+    await getBlocks(selectedProfessionalId);
+
+      setSelectedRange(undefined);
+    setBlockReason("");
+    toast.success("Bloqueo creado correctamente.");
+  } catch (err) {
+    const message =
+        err.message ||
+        "No se pudo crear el bloqueo.";
+
+      setError(message);
+      toast.error(message);
+  } finally {
+    setSavingBlock(false);
+  }
+};
+
+const removeBlock = async (id) => {
+    try {
+      setSavingBlock(true);
+      setError("");
+
+      await deleteProfessionalBlock(
+        id,
+        token
+      );
+
+      await getBlocks(
+        selectedProfessionalId
+      );
+      toast.success("Bloqueo eliminado correctamente.");
+    } catch (err) {
+      const message =
+        err.message ||
+        "No se pudo eliminar el bloqueo.";
+        
+      setError(message);
+      toast.error(message);
+    } finally {
+      setSavingBlock(false);
+    }
+  };
 
   // =========================
   // AGRUPAR POR DÍA
   // =========================
 
   const availabilityByDay = useMemo(() => {
-    const grouped = {};
+      const grouped = {};
 
-    DAYS.forEach((day) => {
-      grouped[day.value] = [];
-    });
+      DAYS.forEach((day) => {
+        grouped[day.value] = [];
+      });
 
-    availability.forEach((item) => {
-      if (grouped[item.dayOfWeek]) {
-        grouped[item.dayOfWeek].push(item);
-      }
-    });
+      availability.forEach((item) => {
+        if (grouped[item.dayOfWeek]) {
+          grouped[item.dayOfWeek].push(item);
+        }
+      });
 
-    Object.values(grouped).forEach((items) => {
-      items.sort((a, b) =>
-        (a.startTime || "").localeCompare(
-          b.startTime || ""
-        )
-      );
-    });
+      Object.values(grouped).forEach((items) => {
+        items.sort((a, b) =>
+          (a.startTime || "").localeCompare(
+            b.startTime || ""
+          )
+        );
+      });
 
     return grouped;
   }, [availability]);
 
-  const selectedProfessional =
-    professionals.find(
+  const selectedProfessional = professionals.find(
       (professional) =>
         professional.id === selectedProfessionalId
     );
+    if (loading) {
+      return <p>Cargando disponibilidad...</p>;
+    }
 
+  //==========================================//
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const blockedRanges = blocks.map((block) => ({
+  from: parseLocalDate(block.startDate),
+  to: parseLocalDate(block.endDate),
 
-  if (loading) {
-    return <p>Cargando disponibilidad...</p>;
-  }
+}));
 
   return (
     <div className="admin-page">
@@ -495,6 +758,44 @@ const AdminAvailability = () => {
         </div>
       )}
 
+      {selectedProfessionalId && (
+          <div className="availability-tabs">
+            <button
+              type="button"
+              className={`availability-tab ${
+                activeSection === "schedule"
+                  ? "active"
+                  : ""
+              }`}
+              onClick={() =>
+                setActiveSection("schedule")
+              }
+            >
+              Horario semanal
+            </button>
+            
+            <button
+              type="button"
+              className={`availability-tab ${
+                activeSection === "blocks"
+                  ? "active"
+                  : ""
+              }`}
+              onClick={() =>
+                setActiveSection("blocks")
+              }
+            >
+              Ausencias y bloqueos
+            
+              {blocks.length > 0 && (
+                <span className="availability-tab-count">
+                  {blocks.length}
+                </span>
+              )}
+            </button>
+          </div>
+        )}
+
       {!selectedProfessionalId ? (
         <div className="admin-card availability-empty-state">
           <h2>Seleccioná un profesional</h2>
@@ -505,7 +806,9 @@ const AdminAvailability = () => {
           </p>
         </div>
       ) : (
-        <div className="admin-card">
+        <>
+          {activeSection === "schedule" && (
+            <div className="admin-card">
           <div className="admin-card-header">
             <div>
               <h2>
@@ -526,12 +829,101 @@ const AdminAvailability = () => {
           </div>
 
           {loadingAvailability ? (
-            <p className="availability-loading">
-              Cargando horarios...
-            </p>
-          ) : (
-            <div className="availability-week">
-          {DAYS.map((day) => {
+  <p className="availability-loading">
+          Cargando horarios...
+        </p>
+      ) : (
+        <>
+          <div className="availability-bulk-editor">
+            <div className="availability-bulk-header">
+              <div>
+                <strong>
+                  Asignar horario a varios días
+                </strong>
+      
+                <span>
+                  Seleccioná los días y definí una
+                  franja común.
+                </span>
+              </div>
+      
+              {selectedScheduleDays.length > 0 && (
+                <span className="availability-selected-count">
+                  {selectedScheduleDays.length}{" "}
+                  {selectedScheduleDays.length === 1
+                    ? "día seleccionado"
+                    : "días seleccionados"}
+                </span>
+              )}
+            </div>
+            
+            <div className="availability-day-selector">
+              {DAYS.map((day) => {
+                const selected =
+                  selectedScheduleDays.includes(
+                    day.value
+                  );
+                
+                return (
+                  <button
+                    key={day.value}
+                    type="button"
+                    className={`availability-day-chip ${
+                      selected ? "selected" : ""
+                    }`}
+                    onClick={() =>
+                      toggleScheduleDay(day.value)
+                    }
+                  >
+                    {day.label}
+                  </button>
+                );
+              })}
+            </div>
+            
+            <div className="availability-bulk-controls">
+              <label>
+                <span>Desde</span>
+            
+                <input
+                  type="time"
+                  value={bulkStartTime}
+                  onChange={(e) =>
+                    setBulkStartTime(e.target.value)
+                  }
+                />
+              </label>
+                
+              <label>
+                <span>Hasta</span>
+                
+                <input
+                  type="time"
+                  value={bulkEndTime}
+                  onChange={(e) =>
+                    setBulkEndTime(e.target.value)
+                  }
+                />
+              </label>
+                
+              <button
+                type="button"
+                className="availability-primary-button"
+                onClick={saveBulkAvailability}
+                disabled={
+                  savingBulk ||
+                  selectedScheduleDays.length === 0
+                }
+              >
+                {savingBulk
+                  ? "Asignando..."
+                  : "Asignar franja"}
+              </button>
+            </div>
+          </div>
+                
+          <div className="availability-week">  
+                {DAYS.map((day) => {
             const dayAvailability =
               availabilityByDay[day.value];
           
@@ -663,13 +1055,193 @@ const AdminAvailability = () => {
       </div>
     );
   })}
+  </div>
+  </>
+      )},
 </div>
-          )}
+          
+      )}
+
+
+{activeSection === "blocks" && (
+  <div className="admin-card availability-blocks-card">
+    <div className="admin-card-header">
+      <div>
+        <h2>Ausencias y bloqueos</h2>
+        <span>
+          Configurá vacaciones, licencias u otros
+          períodos en los que el profesional no estará
+          disponible.
+        </span>
+      </div>
+
+      <span>
+        {blocks.length}{" "}
+        {blocks.length === 1
+          ? "bloqueo"
+          : "bloqueos"}
+      </span>
+    </div>
+
+    <div className="availability-blocks-layout">
+      <div className="availability-calendar-section">
+        <DayPicker
+          mode="range"
+          locale={es}
+          selected={selectedRange}
+          onSelect={setSelectedRange}
+          disabled={{
+            before: today,
+          }}
+          modifiers={{
+            today,
+            blocked: blockedRanges,
+          }}
+          modifiersClassNames={{
+            today: "availability-calendar-today",
+            blocked: "availability-calendar-blocked",
+          }}
+        />
+
+        <div className="availability-calendar-legend">
+            <span>
+              <i className="today" />
+              Hoy
+            </span>
+
+            <span>
+              <i className="selected" />
+              Selección
+            </span>
+
+            <span>
+              <i className="blocked" />
+              Bloqueado
+            </span>
+          </div>
+      </div>
+
+      <div className="availability-block-form">
+        <h3>Nuevo bloqueo</h3>
+
+        <div className="availability-range-summary">
+          <div>
+            <span>Desde</span>
+
+            <strong>
+              {selectedRange?.from
+                ? selectedRange.from.toLocaleDateString(
+                    "es-AR"
+                  )
+                : "Seleccionar"}
+            </strong>
+          </div>
+
+          <div>
+            <span>Hasta</span>
+
+            <strong>
+              {selectedRange?.to
+                ? selectedRange.to.toLocaleDateString(
+                    "es-AR"
+                  )
+                : selectedRange?.from
+                  ? selectedRange.from.toLocaleDateString(
+                      "es-AR"
+                    )
+                  : "Seleccionar"}
+            </strong>
+          </div>
+        </div>
+
+        <label>
+          Motivo
+          <input
+            type="text"
+            value={blockReason}
+            maxLength={150}
+            onChange={(e) =>
+              setBlockReason(e.target.value)
+            }
+            placeholder="Ej. Vacaciones"
+          />
+        </label>
+
+        <button
+          type="button"
+          className="availability-primary-button"
+          onClick={saveBlock}
+          disabled={
+            savingBlock ||
+            !selectedRange?.from
+          }
+        >
+          {savingBlock
+            ? "Guardando..."
+            : "Bloquear período"}
+        </button>
+      </div>
+    </div>
+
+    <div className="availability-block-list">
+      <h3>Bloqueos configurados</h3>
+
+      {loadingBlocks ? (
+        <p className="availability-loading">
+          Cargando bloqueos...
+        </p>
+      ) : blocks.length === 0 ? (
+        <p className="availability-no-blocks">
+          No hay ausencias o bloqueos configurados
+          para este profesional.
+        </p>
+      ) : (
+        blocks.map((block) => (
+          <div
+            key={block.id}
+            className="availability-block-item"
+          >
+            <div className="availability-block-info">
+              <strong>
+                {parseLocalDate(
+                  block.startDate
+                ).toLocaleDateString("es-AR")}
+                {" — "}
+                {parseLocalDate(
+                  block.endDate
+                ).toLocaleDateString("es-AR")}
+              </strong>
+
+              <span>
+                {block.reason || "Sin motivo"}
+              </span>
+            </div>
+
+            <button
+              type="button"
+              className="availability-delete-button"
+              onClick={() =>
+                removeBlock(block.id)
+              }
+              disabled={savingBlock}
+              title="Eliminar bloqueo"
+            >
+              ×
+            </button>
+          </div>
+        ))
+      )}
+          </div>
         </div>
       )}
+
+    </>
+  )}
+
   
-    </div>
-  );
+
+</div>
+);
 };
 
 export default AdminAvailability;
