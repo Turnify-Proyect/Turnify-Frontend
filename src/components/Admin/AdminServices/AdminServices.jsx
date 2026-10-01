@@ -358,10 +358,10 @@ const handleDeactivateCategory = async () => {
       setError("Esperá a que termine de subir la imagen.");
     return;
     }
-    if (!form.imageUrl) {
-    setError("Subí una imagen antes de crear el servicio.");
-    return;
-  }
+    if (!form.imageUrl && !selectedFile) {
+      setError("Seleccioná una imagen de tu equipo o pegá una URL antes de crear el servicio.");
+      return;
+    }
     
     try {
       setSaving(true);
