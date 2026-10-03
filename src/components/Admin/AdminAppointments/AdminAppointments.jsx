@@ -917,7 +917,6 @@ const createAdminAppointment = async () => {
                   setRescheduleServiceId("");
                   setRescheduleProfessionalId("");
                   setRescheduleProfessionals([]);
-                  setProfessionalAvailability([]);
                   setRescheduleDate("");
                   setRescheduleStartAt("");
                   setAvailableSlots([]);
