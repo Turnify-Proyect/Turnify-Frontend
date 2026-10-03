@@ -187,3 +187,138 @@ export const rescheduleAppointmentApi = async (
 
   return data;
 };
+
+export const fetchAvailableSlots = async (
+  professionalId,
+  serviceId,
+  date,
+  token,
+  appointmentId = null
+) => {
+  const params = new URLSearchParams({
+    professionalId,
+    serviceId,
+    date,
+  });
+
+  if (appointmentId) {
+    params.append("appointmentId", appointmentId);
+  }
+
+  const response = await fetch(
+    `${API_URL}/appointments/available-slots?${params.toString()}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      getErrorMessage(
+        data,
+        "No se pudieron obtener los horarios disponibles."
+      )
+    );
+  }
+
+  return data;
+};
+
+export const fetchClients = async (token) => {
+  const params = new URLSearchParams({
+    page: "1",
+    limit: "100",
+    role: "client",
+    status: "true",
+  });
+
+  const response = await fetch(
+    `${API_URL}/users?${params.toString()}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      getErrorMessage(
+        data,
+        "No se pudieron obtener los clientes."
+      )
+    );
+  }
+
+  return data.users || [];
+};
+
+
+export const createAdminOrderApi = async (
+  data,
+  token
+) => {
+  const response = await fetch(
+    `${API_URL}/orders/admin`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(data),
+    }
+  );
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      getErrorMessage(
+        result,
+        "No se pudo crear la reserva."
+      )
+    );
+  }
+
+  return result;
+};
+
+
+export const createAdminCheckoutSessionApi = async (
+  orderId,
+  token
+) => {
+  const response = await fetch(
+    `${API_URL}/payments/stripe/admin/checkout-session`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        orderId,
+      }),
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      getErrorMessage(
+        data,
+        "No se pudo generar el enlace de pago."
+      )
+    );
+  }
+
+  return data;
+};

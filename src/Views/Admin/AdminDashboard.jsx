@@ -17,8 +17,8 @@ const AdminDashboard = () => {
   const renderSection = () => {
     switch (section) {
       case "overview":
-        return <AdminOverview />;
-
+        return <AdminOverview onNavigate={setSection}/>
+        
       case "bookings":
          return <AdminAppointments />;
 

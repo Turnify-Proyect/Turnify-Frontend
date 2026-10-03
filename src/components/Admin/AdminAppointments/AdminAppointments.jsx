@@ -6,6 +6,10 @@ import {
   fetchServices,
   fetchProfessionalsByService,
   fetchProfessionalAvailability,
+  fetchAvailableSlots,
+  fetchClients,
+  createAdminOrderApi,
+  createAdminCheckoutSessionApi,
   cancelAppointmentApi,
   updateAppointmentStatusApi,
   rescheduleAppointmentApi,
@@ -31,13 +35,28 @@ const AdminAppointments = () => {
   const [isRescheduling, setIsRescheduling] = useState(false);
   const [services, setServices] = useState([]);
   const [rescheduleProfessionals, setRescheduleProfessionals] = useState([]);
-  const [professionalAvailability, setProfessionalAvailability] = useState([]);
   const [availableSlots, setAvailableSlots] = useState([]);
 
   const [rescheduleServiceId, setRescheduleServiceId] = useState("");
   const [rescheduleProfessionalId, setRescheduleProfessionalId] = useState("");
   const [rescheduleDate, setRescheduleDate] = useState("");
   const [rescheduleStartAt, setRescheduleStartAt] = useState("");
+
+  // Crear reserva
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [clients, setClients] = useState([]);
+  const [createProfessionals, setCreateProfessionals] = useState([]);
+  const [createAvailableSlots, setCreateAvailableSlots] = useState([]);
+  const [creatingAppointment, setCreatingAppointment] = useState(false);
+  const [createdPayment, setCreatedPayment] = useState(null);
+  const [paymentLinkCopied, setPaymentLinkCopied] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    userId: "",
+    serviceId: "",
+    professionalId: "",
+    date: "",
+    time: "",
+  });
 
   const statusLabels = {
     pending: "Pendiente",
@@ -46,19 +65,6 @@ const AdminAppointments = () => {
     cancelled: "Cancelado",
     expired: "Expirado",
   };
-
-  const getDayOfWeek = (dateString) => {
-  const [year, month, day] = dateString.split("-").map(Number);
-
-  const date = new Date(year, month - 1, day);
-
-  return new Intl.DateTimeFormat("en-US", {
-    weekday: "long",
-    timeZone: "America/Argentina/Buenos_Aires",
-  })
-    .format(date)
-    .toLowerCase();
-};
 
   // Obtener todos los turnos
  const getAppointments = async () => {
@@ -106,31 +112,38 @@ const AdminAppointments = () => {
   }
 };
 
-  // Obtener disponibilidad configurada del profesional
-const getProfessionalAvailability = async (
-  professionalId
-) => {
+  // Obtener disponibilidad de un profesional
+const getAvailableSlots = async (date, professionalId, serviceId, appointmentId = null) => {
+  if (!date || !professionalId || !serviceId) {
+    setAvailableSlots([]);
+    return;
+  }
+
   try {
-    const data = await fetchProfessionalAvailability(
+    setError("");
+
+    const data = await fetchAvailableSlots(
       professionalId,
-      token
+      serviceId,
+      date,
+      token,
+      appointmentId
     );
 
-    setProfessionalAvailability(data);
-
-    return data;
+    setAvailableSlots(
+      Array.isArray(data?.slots)
+        ? data.slots
+        : []
+    );
   } catch (err) {
+    setAvailableSlots([]);
+
     setError(
       err.message ||
-        "Ocurrió un error al obtener la disponibilidad."
+        "No se pudieron obtener los horarios disponibles."
     );
-
-    setProfessionalAvailability([]);
-    return [];
   }
 };
-
-
 
   // Iniciar reprogramación
   const startRescheduling = async () => {
@@ -146,10 +159,6 @@ const getProfessionalAvailability = async (
 
   if (serviceId) {
     await getProfessionalsByService(serviceId);
-  }
-
-  if (professionalId) {
-    await getProfessionalAvailability(professionalId);
   }
 
   setIsRescheduling(true);
@@ -168,125 +177,6 @@ const getProfessionalAvailability = async (
       err.message || "Ocurrió un error al cancelar la reserva."
     );
   }
-};
-
-  //función para obtener los horarios disponibles
-  const generateAvailableSlots = (
-  date,
-  professionalId,
-  serviceId,
-  availabilities
-) => {
-  if (!date || !professionalId || !serviceId) {
-    setAvailableSlots([]);
-    return;
-  }
-
-  const service = services.find(
-    (service) => service.id === serviceId
-  );
-
-  if (!service) {
-    setAvailableSlots([]);
-    return;
-  }
-
-  const duration = service.durationMinutes;
-
-  const dayOfWeek = getDayOfWeek(date);
-
-  const dayAvailabilities = availabilities.filter(
-    (availability) => availability.dayOfWeek === dayOfWeek
-  );
-
-  const slots = [];
-
-  dayAvailabilities.forEach((availability) => {
-    const [startHour, startMinute] = availability.startTime
-      .slice(0, 5)
-      .split(":")
-      .map(Number);
-
-    const [endHour, endMinute] = availability.endTime
-      .slice(0, 5)
-      .split(":")
-      .map(Number);
-
-    const [year, month, day] = date.split("-").map(Number);
-
-    let current = new Date(
-      year,
-      month - 1,
-      day,
-      startHour,
-      startMinute
-    );
-
-    const availabilityEnd = new Date(
-      year,
-      month - 1,
-      day,
-      endHour,
-      endMinute
-    );
-
-    while (
-      current.getTime() + duration * 60 * 1000 <=
-      availabilityEnd.getTime()
-    ) {
-      const slotStart = new Date(current);
-
-      const slotEnd = new Date(
-        slotStart.getTime() + duration * 60 * 1000
-      );
-
-      const overlapsAppointment = appointments.some((appointment) => {
-        // Ignoramos el turno que estamos reprogramando
-        if (appointment.id === selectedAppointment?.id) {
-          return false;
-        }
-
-        // Solo importan los turnos del profesional seleccionado
-        if (appointment.professional?.id !== professionalId) {
-          return false;
-        }
-
-        // Cancelados y expirados no ocupan agenda
-        if (
-          appointment.status === "cancelled" ||
-          appointment.status === "expired"
-        ) {
-          return false;
-        }
-
-        const appointmentStart = new Date(appointment.startAt);
-        const appointmentEnd = new Date(appointment.endAt);
-
-        return (
-          slotStart < appointmentEnd &&
-          slotEnd > appointmentStart
-        );
-      });
-
-      const isPast = slotStart <= new Date();
-
-      if (!overlapsAppointment && !isPast) {
-        slots.push({
-          startAt: slotStart.toISOString(),
-          label: slotStart.toLocaleTimeString("es-AR", {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-        });
-      }
-
-      current = new Date(
-        current.getTime() + duration * 60 * 1000
-      );
-    }
-  });
-
-  setAvailableSlots(slots);
 };
 
   // Cambiar estado del turno
@@ -396,6 +286,195 @@ const rescheduleAppointment = async (id) => {
   }
 };
 
+// Abrir modal de creación de reserva
+const openCreateModal = async () => {
+  try {
+    setError("");
+    setCreatedPayment(null);
+    setPaymentLinkCopied(false);
+
+    setCreateForm({
+      userId: "",
+      serviceId: "",
+      professionalId: "",
+      date: "",
+      time: "",
+    });
+
+    setCreateProfessionals([]);
+    setCreateAvailableSlots([]);
+
+    const data = await fetchClients(token);
+
+    setClients(data);
+    setShowCreateModal(true);
+  } catch (err) {
+    setError(
+      err.message ||
+        "No se pudieron cargar los clientes."
+    );
+  }
+};
+
+// Cerrar modal de creación de reserva
+const closeCreateModal = () => {
+  setShowCreateModal(false);
+
+  setCreateForm({
+    userId: "",
+    serviceId: "",
+    professionalId: "",
+    date: "",
+    time: "",
+  });
+
+  setCreateProfessionals([]);
+  setCreateAvailableSlots([]);
+  setCreatedPayment(null);
+  setPaymentLinkCopied(false);
+};
+
+const handleCreateServiceChange = async (serviceId) => {
+  setCreateForm((current) => ({
+    ...current,
+    serviceId,
+    professionalId: "",
+    date: "",
+    time: "",
+  }));
+
+  setCreateProfessionals([]);
+  setCreateAvailableSlots([]);
+
+  if (!serviceId) return;
+
+  try {
+    setError("");
+
+    const data =
+      await fetchProfessionalsByService(serviceId);
+
+    setCreateProfessionals(data);
+  } catch (err) {
+    setError(
+      err.message ||
+        "No se pudieron obtener los profesionales."
+    );
+  }
+};
+
+const handleCreateProfessionalChange = (
+  professionalId
+) => {
+  setCreateForm((current) => ({
+    ...current,
+    professionalId,
+    date: "",
+    time: "",
+  }));
+
+  setCreateAvailableSlots([]);
+};
+
+const handleCreateDateChange = async (date) => {
+  setCreateForm((current) => ({
+    ...current,
+    date,
+    time: "",
+  }));
+
+  setCreateAvailableSlots([]);
+
+  if (
+    !date ||
+    !createForm.professionalId ||
+    !createForm.serviceId
+  ) {
+    return;
+  }
+
+  try {
+    setError("");
+
+    const data = await fetchAvailableSlots(
+      createForm.professionalId,
+      createForm.serviceId,
+      date,
+      token
+    );
+
+    setCreateAvailableSlots(
+      Array.isArray(data?.slots)
+        ? data.slots
+        : []
+    );
+  } catch (err) {
+    setError(
+      err.message ||
+        "No se pudieron obtener los horarios disponibles."
+    );
+  }
+};
+
+const createAdminAppointment = async () => {
+  if (
+    !createForm.userId ||
+    !createForm.serviceId ||
+    !createForm.professionalId ||
+    !createForm.date ||
+    !createForm.time
+  ) {
+    setError(
+      "Seleccioná cliente, servicio, profesional, fecha y horario."
+    );
+    return;
+  }
+
+  try {
+    setCreatingAppointment(true);
+    setError("");
+
+    const startAt =
+      `${createForm.date}T${createForm.time}:00-03:00`;
+
+    const order = await createAdminOrderApi(
+      {
+        userId: createForm.userId,
+
+        appointments: [
+          {
+            professionalId:
+              createForm.professionalId,
+
+            serviceId:
+              createForm.serviceId,
+
+            startAt,
+          },
+        ],
+      },
+      token
+    );
+
+    const payment =
+      await createAdminCheckoutSessionApi(
+        order.orderId,
+        token
+      );
+
+    setCreatedPayment(payment);
+
+    await getAppointments();
+  } catch (err) {
+    setError(
+      err.message ||
+        "No se pudo crear la reserva."
+    );
+  } finally {
+    setCreatingAppointment(false);
+  }
+};
+
   // --------
 
   return (
@@ -436,10 +515,7 @@ const rescheduleAppointment = async (id) => {
             <option value="expired">Expirados</option>
           </select>
 
-          <button
-            type="button"
-            className="admin-create-button"
-          >
+          <button type="button" className="admin-create-button" onClick={openCreateModal}>
             <span>+</span>
             Crear nuevo
           </button>
@@ -655,7 +731,6 @@ const rescheduleAppointment = async (id) => {
             setRescheduleProfessionalId("");
             setRescheduleDate("");
             setRescheduleStartAt("");
-            setProfessionalAvailability([]);
             setAvailableSlots([]);
 
             if (serviceId) {
@@ -697,14 +772,6 @@ const rescheduleAppointment = async (id) => {
             setRescheduleDate("");
             setRescheduleStartAt("");
             setAvailableSlots([]);
-
-            if (professionalId) {
-              await getProfessionalAvailability(
-                professionalId
-              );
-            } else {
-              setProfessionalAvailability([]);
-            }
           }}
         >
           <option value="">
@@ -739,11 +806,11 @@ const rescheduleAppointment = async (id) => {
             setRescheduleDate(date);
             setRescheduleStartAt("");
 
-            generateAvailableSlots(
+            getAvailableSlots(
               date,
               rescheduleProfessionalId,
               rescheduleServiceId,
-              professionalAvailability
+              selectedAppointment.id
             );
           }}
         />
@@ -877,6 +944,311 @@ const rescheduleAppointment = async (id) => {
   </div>
 )}
 
+      {showCreateModal && (
+        <div
+          className="admin-modal-overlay"
+          onClick={closeCreateModal}
+        >
+          <div
+            className="admin-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="admin-modal-header">
+              <div>
+                <h2>Nueva reserva</h2>
+      
+                <p>
+                  Creá una reserva para un cliente.
+                </p>
+              </div>
+      
+              <button
+                type="button"
+                className="admin-modal-close"
+                onClick={closeCreateModal}
+              >
+                ×
+              </button>
+            </div>
+      
+            <div className="admin-modal-scroll">
+              <div className="admin-modal-body">
+      
+                {!createdPayment ? (
+                  <div className="appointment-reschedule">
+                  
+                    <div className="appointment-reschedule-fields">
+                
+                      {/* CLIENTE */}
+                      <div className="appointment-reschedule-field">
+                        <label htmlFor="createClient">
+                          Cliente
+                        </label>
+                
+                        <select
+                          id="createClient"
+                          value={createForm.userId}
+                          onChange={(e) =>
+                            setCreateForm((current) => ({
+                              ...current,
+                              userId: e.target.value,
+                            }))
+                          }
+                        >
+                          <option value="">
+                            Seleccionar cliente
+                          </option>
+                        
+                          {clients.map((client) => (
+                            <option
+                              key={client.id}
+                              value={client.id}
+                            >
+                              {client.name} - {client.email}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                        
+                      {/* SERVICIO */}
+                      <div className="appointment-reschedule-field">
+                        <label htmlFor="createService">
+                          Servicio
+                        </label>
+                        
+                        <select
+                          id="createService"
+                          value={createForm.serviceId}
+                          onChange={(e) =>
+                            handleCreateServiceChange(
+                              e.target.value
+                            )
+                          }
+                        >
+                          <option value="">
+                            Seleccionar servicio
+                          </option>
+                        
+                          {services.map((service) => (
+                            <option
+                              key={service.id}
+                              value={service.id}
+                            >
+                              {service.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                        
+                      {/* PROFESIONAL */}
+                      <div className="appointment-reschedule-field">
+                        <label htmlFor="createProfessional">
+                          Profesional
+                        </label>
+                        
+                        <select
+                          id="createProfessional"
+                          value={
+                            createForm.professionalId
+                          }
+                          disabled={!createForm.serviceId}
+                          onChange={(e) =>
+                            handleCreateProfessionalChange(
+                              e.target.value
+                            )
+                          }
+                        >
+                          <option value="">
+                            Seleccionar profesional
+                          </option>
+                        
+                          {createProfessionals.map(
+                            (item) => (
+                              <option
+                                key={
+                                  item.professionalId
+                                }
+                                value={
+                                  item.professionalId
+                                }
+                              >
+                                {item.professional?.user
+                                  ?.name ||
+                                  "Profesional"}
+                              </option>
+                            )
+                          )}
+                        </select>
+                      </div>
+                        
+                      {/* FECHA */}
+                      <div className="appointment-reschedule-field">
+                        <label htmlFor="createDate">
+                          Fecha
+                        </label>
+                        
+                        <input
+                          id="createDate"
+                          type="date"
+                          value={createForm.date}
+                          disabled={
+                            !createForm.professionalId
+                          }
+                          onChange={(e) =>
+                            handleCreateDateChange(
+                              e.target.value
+                            )
+                          }
+                        />
+                      </div>
+                    </div>
+                        
+                    {/* HORARIOS */}
+                    {createForm.date && (
+                      <div className="appointment-reschedule-field">
+                        <label>
+                          Horario disponible
+                        </label>
+                    
+                        {createAvailableSlots.length > 0 ? (
+                          <div className="appointment-slots">
+                            {createAvailableSlots.map(
+                              (time) => (
+                                <button
+                                  key={time}
+                                  type="button"
+                                  className={`appointment-slot ${
+                                    createForm.time === time
+                                      ? "selected"
+                                      : ""
+                                  }`}
+                                  onClick={() =>
+                                    setCreateForm(
+                                      (current) => ({
+                                        ...current,
+                                        time,
+                                      })
+                                    )
+                                  }
+                                >
+                                  {time}
+                                </button>
+                              )
+                            )}
+                          </div>
+                        ) : (
+                          <p className="appointment-no-slots">
+                            No hay horarios disponibles
+                            para esta fecha.
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                  </div>
+                ) : (
+                  <div className="appointment-create-result">
+                  
+                    <h3>
+                      Reserva creada correctamente
+                    </h3>
+                
+                    <p>
+                      La reserva quedó pendiente de pago.
+                    </p>
+                
+                    <p>
+                      <strong>Cliente:</strong>{" "}
+                      {createdPayment.email}
+                    </p>
+                
+                    <p>
+                      <strong>Seña:</strong>{" "}
+                      $
+                      {Number(
+                        createdPayment.depositAmount
+                      ).toLocaleString("es-AR")}
+                    </p>
+                    
+                    <p>
+                      {createdPayment.emailSent
+                        ? "El enlace de pago fue enviado por correo al cliente."
+                        : "No se pudo enviar el correo, pero el enlace de pago fue generado correctamente."}
+                    </p>
+                      
+                    <button
+                      type="button"
+                      className={`admin-action-secondary ${
+                        paymentLinkCopied ? "copied" : ""
+                      }`}
+                      onClick={async () => {
+                        await navigator.clipboard.writeText(
+                          createdPayment.checkoutUrl
+                        );
+                      
+                        setPaymentLinkCopied(true);
+                      }}
+                    >
+                      {paymentLinkCopied
+                        ? "✓ Link copiado"
+                        : "Copiar link de pago"}
+                    </button>
+                    
+                  </div>
+                )}
+
+                {error && (
+                  <p className="appointment-reschedule-error">
+                    {error}
+                  </p>
+                )}
+              </div>
+            </div>
+              
+            <div className="admin-modal-actions">
+              
+              {!createdPayment ? (
+                <>
+                  <button
+                    type="button"
+                    className="admin-action-secondary"
+                    onClick={closeCreateModal}
+                  >
+                    Cancelar
+                  </button>
+              
+                  <button
+                    type="button"
+                    className="admin-action-primary"
+                    disabled={
+                      creatingAppointment ||
+                      !createForm.userId ||
+                      !createForm.serviceId ||
+                      !createForm.professionalId ||
+                      !createForm.date ||
+                      !createForm.time
+                    }
+                    onClick={createAdminAppointment}
+                  >
+                    {creatingAppointment
+                      ? "Creando..."
+                      : "Crear reserva"}
+                  </button>
+                </>
+              ) : (
+                <button
+                  type="button"
+                  className="admin-action-primary"
+                  onClick={closeCreateModal}
+                >
+                  Cerrar
+                </button>
+              )}
+
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
