@@ -824,20 +824,23 @@ const createAdminAppointment = async () => {
 
         {availableSlots.length > 0 ? (
           <div className="appointment-slots">
-            {availableSlots.map((slot) => (
+            {availableSlots.map((time) => (
               <button
-                key={slot.startAt}
+                key={time}
                 type="button"
                 className={`appointment-slot ${
-                  rescheduleStartAt === slot.startAt
+                  rescheduleStartAt ===
+                  `${rescheduleDate}T${time}:00-03:00`
                     ? "selected"
                     : ""
                 }`}
                 onClick={() =>
-                  setRescheduleStartAt(slot.startAt)
+                  setRescheduleStartAt(
+                    `${rescheduleDate}T${time}:00-03:00`
+                  )
                 }
               >
-                {slot.label}
+                {time}
               </button>
             ))}
           </div>
