@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../../../context/AuthContext";
+import { toast } from "react-toastify";
 
 import {
   fetchProfessionals,
@@ -199,42 +200,46 @@ const AdminProfessionals = () => {
     setError("");
   };
 
-  const changeProfessionalStatus =
-    async () => {
-      if (!selectedProfessional) return;
+  const changeProfessionalStatus = async () => {
+    if (!selectedProfessional) return;
 
-      try {
-        setError("");
+    try {
+      setError("");
 
-        if (
-          selectedProfessional.isActive
-        ) {
-          await deactivateProfessionalApi(
-            selectedProfessional.id,
-            token
-          );
-        } else {
-          await activateProfessionalApi(
-            selectedProfessional.id,
-            token
-          );
-        }
+      const wasActive = selectedProfessional.isActive;
 
-        await getProfessionals();
-
-        closeProfessionalModal();
-      } catch (err) {
-        setError(
-          err.message ||
-            "No se pudo modificar el estado del profesional."
+      if (wasActive) {
+        await deactivateProfessionalApi(
+          selectedProfessional.id,
+          token
+        );
+      } else {
+        await activateProfessionalApi(
+          selectedProfessional.id,
+          token
         );
       }
-    };
 
-  const saveProfessionalChanges =
-    async () => {
+      await getProfessionals();
+
+      toast.success(
+        wasActive
+          ? "Profesional desactivado correctamente"
+          : "Profesional activado correctamente"
+      );
+
+      closeProfessionalModal();
+    } catch (err) {
+      toast.error(
+        err.message ||
+          "No se pudo modificar el estado del profesional."
+      );
+    }
+};
+
+  const saveProfessionalChanges = async () => {
       if (!editSpecialty) {
-        setError(
+        toast.error(
           "Seleccioná una especialidad."
         );
         return;
@@ -261,8 +266,9 @@ const AdminProfessionals = () => {
         );
 
         setIsEditing(false);
+        toast.success("Profesional actualizado correctamente");
       } catch (err) {
-        setError(
+        toast.error(
           err.message ||
             "No se pudo actualizar el profesional."
         );
@@ -271,7 +277,7 @@ const AdminProfessionals = () => {
 
   const associateService = async () => {
     if (!selectedServiceId) {
-      setError(
+      toast.error(
         "Seleccioná un servicio."
       );
       return;
@@ -291,8 +297,11 @@ const AdminProfessionals = () => {
       );
 
       setSelectedServiceId("");
+         toast.success(
+        "Servicio asociado correctamente"
+      );
     } catch (err) {
-      setError(
+      toast.error(
         err.message ||
           "No se pudo asociar el servicio."
       );
@@ -314,8 +323,9 @@ const AdminProfessionals = () => {
       await getProfessionalServices(
         selectedProfessional.id
       );
+      toast.success("Servicio quitado correctamente");
     } catch (err) {
-      setError(
+      toast.error(
         err.message ||
           "No se pudo quitar el servicio."
       );
@@ -401,14 +411,14 @@ const AdminProfessionals = () => {
 
   const createProfessional = async () => {
     if (!createForm.userId) {
-      setError(
+      toast.error(
         "Seleccioná un usuario."
       );
       return;
     }
 
     if (!createForm.specialty) {
-      setError(
+      toast.error(
         "Seleccioná una especialidad."
       );
       return;
@@ -436,8 +446,11 @@ const AdminProfessionals = () => {
       );
 
       setAvailableUsers([]);
+      toast.success(
+      "Profesional creado correctamente"
+    );
     } catch (err) {
-      setError(
+      toast.error(
         err.message ||
           "No se pudo crear el profesional."
       );

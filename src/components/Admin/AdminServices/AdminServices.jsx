@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../../../context/AuthContext";
+import { toast } from "react-toastify";
 
 import {
   fetchAllServices,
@@ -355,11 +356,11 @@ const handleDeactivateCategory = async () => {
     if (!validateForm()) return;
 
     if (isUploading) {
-      setError("Esperá a que termine de subir la imagen.");
+      toast.error("Esperá a que termine de subir la imagen.");
     return;
     }
     if (!form.imageUrl && !selectedFile) {
-      setError("Seleccioná una imagen de tu equipo o pegá una URL antes de crear el servicio.");
+      toast.error("Seleccioná una imagen de tu equipo o pegá una URL antes de crear el servicio.");
       return;
     }
     
@@ -383,8 +384,9 @@ const handleDeactivateCategory = async () => {
       await getServices();
 
       closeCreateModal();
+      toast.success("Servicio creado correctamente");
     } catch (err) {
-      setError(
+      toast.error(
         err.message ||
           "No se pudo crear el servicio."
       );
@@ -462,8 +464,9 @@ const handleDeactivateCategory = async () => {
         await getServices();
 
         setIsEditing(false);
+        toast.success("Servicio actualizado correctamente");
       } catch (err) {
-        setError(
+        toast.error(
           err.message ||
             "No se pudo actualizar el servicio."
         );
@@ -500,8 +503,13 @@ const handleDeactivateCategory = async () => {
         setSelectedService(updated);
 
         await getServices();
+        toast.success(
+          wasActive
+            ? "Servicio desactivado correctamente"
+            : "Servicio activado correctamente"
+        );
       } catch (err) {
-        setError(
+        toast.error(
           err.message ||
             "No se pudo modificar el estado del servicio."
         );
