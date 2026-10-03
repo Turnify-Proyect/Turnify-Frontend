@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../../../context/AuthContext";
+import { toast } from "react-toastify";
 
 import {
   fetchUsers,
@@ -102,7 +103,7 @@ const AdminUsers = () => {
         totalPages: data.totalPages,
       });
     } catch (err) {
-      setError(
+      toast.error(
         err.message ||
           "Ocurrió un error al obtener los usuarios."
       );
@@ -137,7 +138,7 @@ const AdminUsers = () => {
 
       setIsEditing(false);
     } catch (err) {
-      setError(
+      toast.error(
         err.message ||
           "No se pudo obtener el detalle del usuario."
       );
@@ -196,7 +197,7 @@ const AdminUsers = () => {
     if (!selectedUser) return;
 
     if (editRoles.length === 0) {
-      setError(
+      toast.error(
         "El usuario debe tener al menos un rol."
       );
       return;
@@ -206,7 +207,7 @@ const AdminUsers = () => {
       editRoles.includes("client") &&
       editRoles.includes("professional")
     ) {
-      setError(
+      toast.error(
         "Un usuario no puede ser cliente y profesional al mismo tiempo."
       );
       return;
@@ -263,8 +264,9 @@ const AdminUsers = () => {
       setIsEditing(false);
 
       await getUsers();
+      toast.success("Usuario actualizado correctamente");
     } catch (err) {
-      setError(
+      toast.error(
         err.message ||
           "No se pudo actualizar el usuario."
       );
@@ -299,8 +301,13 @@ const AdminUsers = () => {
       setEditRoles(updatedUser.roles || []);
 
       await getUsers();
+        toast.success(
+        wasActive
+          ? "Usuario desactivado correctamente"
+          : "Usuario activado correctamente"
+      );
     } catch (err) {
-      setError(
+      toast.error(
         err.message ||
           "No se pudo modificar el estado del usuario."
       );
@@ -358,8 +365,9 @@ const AdminUsers = () => {
       setPage(1);
 
       await getUsers();
+      toast.success("Usuario creado correctamente");
     } catch (err) {
-      setError(
+      toast.error(
         err.message ||
           "No se pudo crear el usuario."
       );

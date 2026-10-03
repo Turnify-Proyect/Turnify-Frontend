@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../../../context/AuthContext";
+import { toast } from "react-toastify";
 import "./AdminAppointments.css";
 import {
   fetchAppointments,
@@ -172,8 +173,9 @@ const getAvailableSlots = async (date, professionalId, serviceId, appointmentId 
     await cancelAppointmentApi(id, token);
 
     await getAppointments();
+    toast.success("Reserva cancelada correctamente");
   } catch (err) {
-    setError(
+    toast.error(
       err.message || "Ocurrió un error al cancelar la reserva."
     );
   }
@@ -191,8 +193,15 @@ const getAvailableSlots = async (date, professionalId, serviceId, appointmentId 
     );
 
     await getAppointments();
-  } catch (err) {
-    setError(
+     if (status === "confirmed") {
+      toast.success("Reserva confirmada correctamente");
+    } else if (status === "completed") {
+      toast.success("Reserva completada correctamente");
+    } else {
+      toast.success("Estado de la reserva actualizado correctamente");
+    }
+   } catch (err) {
+    toast.error(
       err.message ||
         "Ocurrió un error al modificar el estado."
     );
@@ -257,7 +266,7 @@ const rescheduleAppointment = async (id) => {
     !rescheduleProfessionalId ||
     !rescheduleStartAt
   ) {
-    setError(
+    toast.error(
       "Seleccioná servicio, profesional, fecha y horario."
     );
     return;
@@ -277,9 +286,10 @@ const rescheduleAppointment = async (id) => {
     );
 
     await getAppointments();
+    toast.success("Reserva reprogramada correctamente");
     closeAppointmentModal();
   } catch (err) {
-    setError(
+     toast.error(
       err.message ||
         "Ocurrió un error al reprogramar la reserva."
     );
@@ -424,7 +434,7 @@ const createAdminAppointment = async () => {
     !createForm.date ||
     !createForm.time
   ) {
-    setError(
+    toast.error(
       "Seleccioná cliente, servicio, profesional, fecha y horario."
     );
     return;
@@ -466,7 +476,7 @@ const createAdminAppointment = async () => {
 
     await getAppointments();
   } catch (err) {
-    setError(
+    toast.error(
       err.message ||
         "No se pudo crear la reserva."
     );
