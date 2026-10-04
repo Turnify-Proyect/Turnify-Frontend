@@ -10,6 +10,7 @@ import AdminUsers from "../../components/Admin/AdminUsers/AdminUsers";
 import AdminClients from "../../components/Admin/AdminClients/AdminClients";
 import AdminServices from "../../components/Admin/AdminServices/AdminServices";
 import AdminAvailability from "../../components/Admin/AdminAvailability/AdminAvailability";
+import AdminStatistics from "../../components/Admin/AdminStatistics/AdminStatistics";
 
 const AdminDashboard = () => {
   const [section, setSection] = useState("overview");
@@ -36,6 +37,9 @@ const AdminDashboard = () => {
 
       case "users":
         return <AdminUsers />;
+      
+      case "statistics":
+        return <AdminStatistics />;
 
       default:
         return <AdminOverview />;

@@ -48,6 +48,11 @@ const AdminSidebar = ({ section, setSection }) => {
     label: "Usuarios",
     icon: "▦",
   },
+  {
+    key: "statistics",
+    label: "Reportes y estadísticas",
+    icon: "◫",
+  },
 ];
   return (
     <aside className="admin-sidebar">
