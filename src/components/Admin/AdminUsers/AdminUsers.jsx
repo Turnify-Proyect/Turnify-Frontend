@@ -276,10 +276,12 @@ const AdminUsers = () => {
   const changeUserStatus = async () => {
     if (!selectedUser) return;
 
+    const wasActive = selectedUser.isActive;
+
     try {
       setError("");
 
-      if (selectedUser.isActive) {
+      if (wasActive) {
         await deactivateUserApi(
           selectedUser.id,
           token
@@ -301,7 +303,8 @@ const AdminUsers = () => {
       setEditRoles(updatedUser.roles || []);
 
       await getUsers();
-        toast.success(
+
+      toast.success(
         wasActive
           ? "Usuario desactivado correctamente"
           : "Usuario activado correctamente"

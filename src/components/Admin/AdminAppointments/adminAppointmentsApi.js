@@ -110,14 +110,24 @@ export const cancelAppointmentApi = async (id, token) => {
     }
   );
 
-  const data = await response.json();
+  const rawData = await response.text();
+
+  let data = rawData;
+
+  try {
+    data = rawData ? JSON.parse(rawData) : null;
+  } catch {
+    // Si no es JSON, dejamos la respuesta como texto.
+  }
 
   if (!response.ok) {
     throw new Error(
-      getErrorMessage(
-        data,
-        "No se pudo cancelar la reserva."
-      )
+      typeof data === "string"
+        ? data
+        : getErrorMessage(
+            data,
+            "No se pudo cancelar la reserva."
+          )
     );
   }
 
@@ -256,7 +266,9 @@ export const fetchClients = async (token) => {
     );
   }
 
-  return data.users || [];
+  return (data.users || []).filter(
+    (user) => user.isActive === true
+  );
 };
 
 
