@@ -481,6 +481,7 @@ const handleDeactivateCategory = async () => {
 
   const changeServiceStatus =
     async () => {
+    const wasActive = selectedService.isActive;
       try {
         setError("");
 
