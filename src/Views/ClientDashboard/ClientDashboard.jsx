@@ -521,23 +521,27 @@ const handlePayOrder = (group) => {
                   Cancelar
                 </button>
 
-                <button
-                  type="button"
-                  className="reschedule-button"
-                  onClick={() =>
-                    navigate("/booking", {
-                      state: {
-                        mode: "reschedule",
-                        appointmentId:
-                          appointment.id,
-                        serviceId:
-                          appointment.service?.id,
-                      },
-                    })
-                  }
-                >
-                  Reprogramar
-                </button>
+                {(appointment.rescheduleCount ?? 0) < 2 ? (
+                  <button
+                    type="button"
+                    className="reschedule-button"
+                    onClick={() =>
+                      navigate("/booking", {
+                        state: {
+                          mode: "reschedule",
+                          appointmentId: appointment.id,
+                          serviceId: appointment.service?.id,
+                        },
+                      })
+                    }
+                  >
+                    Reprogramar
+                  </button>
+                ) : (
+                  <span className="reschedule-limit-message">
+                    Máximo de reprogramaciones alcanzado.
+                  </span>
+                )}
               </>
             )}
           </div>
