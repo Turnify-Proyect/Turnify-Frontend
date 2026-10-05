@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../../context/AuthContext";
+import { DayPicker } from "@daypicker/react";
+import { es } from "@daypicker/react/locale";
+import "@daypicker/react/style.css";
+import { toast } from "react-toastify";
 
 import {
   fetchProfessionals,
@@ -7,9 +11,14 @@ import {
   createAvailabilityApi,
   updateAvailabilityApi,
   deleteAvailabilityApi,
+  fetchProfessionalBlocks,
+  createProfessionalBlock,
+  deleteProfessionalBlock,
 } from "./adminAvailabilityApi";
 
 import "./AdminAvailability.css";
+
+import {formatLocalDate, parseLocalDate } from "../../../helpers/formatLocalDate"
 
 const DAYS = [
   { value: "monday", label: "Lunes" },
@@ -21,36 +30,29 @@ const DAYS = [
   { value: "sunday", label: "Domingo" },
 ];
 
-const EMPTY_FORM = {
-  dayOfWeek: "monday",
-  startTime: "",
-  endTime: "",
-};
-
 const AdminAvailability = () => {
   const { token } = useAuth();
-
   const [professionals, setProfessionals] = useState([]);
-  const [selectedProfessionalId, setSelectedProfessionalId] =
-    useState("");
-
+  const [selectedProfessionalId, setSelectedProfessionalId] = useState("");
   const [availability, setAvailability] = useState([]);
-
   const [loading, setLoading] = useState(true);
-  const [loadingAvailability, setLoadingAvailability] =
-    useState(false);
-
+  const [loadingAvailability, setLoadingAvailability] = useState(false);
+  const [savingId, setSavingId] = useState(null);
   const [error, setError] = useState("");
+  const [pendingProfessionalId, setPendingProfessionalId] = useState("");
+  const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
+  const [blocks, setBlocks] = useState([]);
+  const [selectedRange, setSelectedRange] = useState(undefined);
+  const [blockReason, setBlockReason] = useState("");
+  const [loadingBlocks, setLoadingBlocks] = useState(false);
+  const [savingBlock, setSavingBlock] = useState(false);
+  const [activeSection, setActiveSection] = useState("schedule");
+  const [selectedScheduleDays, setSelectedScheduleDays] = useState([]);
+  const [bulkStartTime, setBulkStartTime] = useState("09:00");
+  const [bulkEndTime, setBulkEndTime] = useState("13:00");
+  const [savingBulk, setSavingBulk] = useState(false);
+  const hasUnsavedChanges = availability.some((item) => item.isNew || item.isDirty);
 
-  const [showCreateModal, setShowCreateModal] =
-    useState(false);
-
-  const [selectedAvailability, setSelectedAvailability] =
-    useState(null);
-
-  const [form, setForm] = useState(EMPTY_FORM);
-
-  const [saving, setSaving] = useState(false);
 
   // =========================
   // PROFESIONALES
@@ -116,185 +118,521 @@ const AdminAvailability = () => {
     }
   };
 
+  const toggleScheduleDay = (dayValue) => {
+    setSelectedScheduleDays((current) =>
+      current.includes(dayValue)
+        ? current.filter(
+            (day) => day !== dayValue
+          )
+        : [...current, dayValue]
+    );
+  };
+
+  const saveBulkAvailability = async () => {
+    if (hasUnsavedChanges) {
+      setError(
+        "Guardá o eliminá primero los cambios individuales pendientes."
+      );
+      return;
+    }
+
+    if (selectedScheduleDays.length === 0) {
+      const message =
+        "Seleccioná al menos un día de la semana.";
+
+      setError(message);
+      toast.warning(message);
+
+      return;
+    }
+
+    if (!bulkStartTime || !bulkEndTime) {
+      setError(
+        "Completá el horario de inicio y finalización."
+      );
+      return;
+    }
+
+    if (bulkStartTime >= bulkEndTime) {
+      setError(
+        "El horario de inicio debe ser anterior al horario de finalización."
+      );
+      return;
+    }
+
+    const dayWithOverlap =
+      selectedScheduleDays.find((dayValue) => {
+        const daySlots =
+          availabilityByDay[dayValue] || [];
+
+        return daySlots.some((item) => {
+          const existingStart =
+            item.startTime.slice(0, 5);
+
+          const existingEnd =
+            item.endTime.slice(0, 5);
+
+          return (
+            bulkStartTime < existingEnd &&
+            bulkEndTime > existingStart
+          );
+        });
+      });
+
+    if (dayWithOverlap) {
+      const dayLabel = DAYS.find(
+        (day) => day.value === dayWithOverlap
+      )?.label;
+
+      const message = `La franja se superpone con un horario existente en ${dayLabel}.`;
+      setError(message);
+      toast.error(message);
+
+      return;
+    }
+
+    try {
+      setSavingBulk(true);
+      setError("");
+
+      await Promise.all(
+        selectedScheduleDays.map((dayOfWeek) =>
+          createAvailabilityApi(
+            selectedProfessionalId,
+            {
+              dayOfWeek,
+              startTime: bulkStartTime,
+              endTime: bulkEndTime,
+            },
+            token
+          )
+        )
+      );
+
+      await getAvailability(
+        selectedProfessionalId
+      );
+
+      setSelectedScheduleDays([]);
+      toast.success("Franja horaria asignada correctamente.");
+
+    } catch (err) {
+      await getAvailability(
+        selectedProfessionalId
+      );
+
+      setError(
+        err.message ||
+          "No se pudo asignar la franja horaria."
+      );
+    } finally {
+      setSavingBulk(false);
+    }
+  };
+
+  const changeProfessional = async (professionalId) => {
+    setSelectedProfessionalId(
+      professionalId
+    );
+
+    setAvailability([]);
+    setBlocks([]);
+    setSelectedRange(undefined);
+    setBlockReason("");
+
+    setError("");
+    setShowUnsavedWarning(false);
+    setPendingProfessionalId("");
+
+    if (professionalId) {
+      await Promise.all([
+        getAvailability(professionalId),
+        getBlocks(professionalId),
+      ]);
+    }
+  };
+
   const handleProfessionalChange = async (e) => {
     const professionalId = e.target.value;
 
-    setSelectedProfessionalId(professionalId);
-    setAvailability([]);
-    setError("");
+    if (
+      professionalId !== selectedProfessionalId &&
+      hasUnsavedChanges
+    ) {
+      setPendingProfessionalId(professionalId);
+      setShowUnsavedWarning(true);
 
-    if (professionalId) {
-      await getAvailability(professionalId);
+      return;
     }
+
+    await changeProfessional(professionalId);
   };
 
-  // =========================
-  // FORMULARIO
-  // =========================
+  const handleSlotChange = (slotKey, field, value) => {
+  setAvailability((current) =>
+    current.map((item) => {
+      const key = item.id || item.tempId;
 
-  const handleFormChange = (e) => {
-    const { name, value } = e.target;
+      if (key !== slotKey) {
+        return item;
+      }
 
-    setForm((current) => ({
+      return {
+        ...item,
+        [field]: value,
+        isDirty: !item.isNew,
+      };
+    })
+  );
+};
+
+  const discardChangesAndContinue = async () => {
+    const professionalId = pendingProfessionalId;
+
+    setShowUnsavedWarning(false);
+    setPendingProfessionalId("");
+
+    await changeProfessional(professionalId);
+  };
+
+  const keepEditing = () => {
+    setShowUnsavedWarning(false);
+    setPendingProfessionalId("");
+  };
+
+  const addMinutesToTime = (time, minutes) => {
+      const [hours, mins] = time
+        .split(":")
+        .map(Number);
+
+      const totalMinutes =
+        hours * 60 + mins + minutes;
+
+      const newHours = Math.floor(
+        totalMinutes / 60
+      );
+    
+      const newMinutes = totalMinutes % 60;
+    
+      if (newHours >= 24) {
+        return "23:59";
+      }
+    
+      return `${String(newHours).padStart(
+        2,
+        "0"
+      )}:${String(newMinutes).padStart(2, "0")}`;
+    };
+
+  const addAvailabilitySlot = (dayOfWeek) => {
+    if (!selectedProfessionalId) return;
+
+    const daySlots = availability
+      .filter(
+        (item) =>
+          item.dayOfWeek === dayOfWeek
+      )
+      .sort((a, b) =>
+        (a.startTime || "").localeCompare(
+          b.startTime || ""
+        )
+      );
+
+    let startTime = "09:00";
+    let endTime = "13:00";
+
+    if (daySlots.length > 0) {
+      const lastSlot =
+        daySlots[daySlots.length - 1];
+
+      const lastEnd =
+        lastSlot.endTime?.slice(0, 5);
+
+      if (lastEnd === "23:59") {
+        setError(
+          "No se puede agregar otra franja después de las 23:59."
+        );
+        return;
+      }
+
+      startTime = lastEnd || "09:00";
+
+      endTime = addMinutesToTime(
+        startTime,
+        60
+      );
+    }
+
+    const tempId = crypto.randomUUID();
+
+    setAvailability((current) => [
       ...current,
-      [name]: value,
-    }));
+      {
+        tempId,
+        dayOfWeek,
+        startTime,
+        endTime,
+        isNew: true,
+      },
+    ]);
+
+    setError("");
   };
 
-  const validateForm = () => {
-    if (!form.dayOfWeek) {
-      setError("Seleccioná un día.");
+  const validateSlot = (item) => {
+    const startTime = item.startTime?.slice(0, 5);
+    const endTime = item.endTime?.slice(0, 5);
+
+    if (!startTime || !endTime) {
+      const message =
+        "Ingresá el horario de inicio y finalización.";
+
+      setError(message);
+      toast.warning(message);
       return false;
     }
 
-    if (!form.startTime || !form.endTime) {
-      setError(
-        "Ingresá el horario de inicio y finalización."
-      );
+    if (startTime >= endTime) {
+      const message =
+        "El horario de finalización debe ser posterior al horario de inicio.";
+
+      setError(message);
+      toast.warning(message);
       return false;
     }
 
-    if (form.startTime >= form.endTime) {
-      setError(
-        "El horario de finalización debe ser posterior al horario de inicio."
-      );
+    const currentKey = item.id || item.tempId;
+
+    const overlapping = availability.some(
+      (existing) => {
+        const existingKey =
+          existing.id || existing.tempId;
+
+        if (existingKey === currentKey) {
+          return false;
+        }
+
+        if (
+          existing.dayOfWeek !== item.dayOfWeek
+        ) {
+          return false;
+        }
+
+        const existingStart =
+          existing.startTime?.slice(0, 5);
+
+        const existingEnd =
+          existing.endTime?.slice(0, 5);
+
+        if (!existingStart || !existingEnd) {
+          return false;
+        }
+
+        return (
+          startTime < existingEnd &&
+          endTime > existingStart
+        );
+      }
+    );
+
+    if (overlapping) {
+       const message =
+         "La franja horaria se superpone con otro horario configurado para ese día.";
+
+       setError(message);
+       toast.error(message);
       return false;
     }
 
     return true;
   };
 
-  // =========================
-  // CREAR
-  // =========================
+  const saveAvailabilitySlot = async (item) => {
+  if (!validateSlot(item)) return;
 
-  const openCreateModal = () => {
-    if (!selectedProfessionalId) {
-      setError(
-        "Seleccioná un profesional antes de agregar disponibilidad."
+  const slotKey = item.id || item.tempId;
+
+  try {
+    setSavingId(slotKey);
+    setError("");
+
+    const data = {
+      dayOfWeek: item.dayOfWeek,
+      startTime: item.startTime.slice(0, 5),
+      endTime: item.endTime.slice(0, 5),
+    };
+
+    if (item.isNew) {
+        const created =
+          await createAvailabilityApi(
+            selectedProfessionalId,
+            data,
+            token
+          );
+        
+        setAvailability((current) =>
+          current.map((availability) =>
+            availability.tempId === item.tempId
+              ? created
+              : availability
+          )
+        );
+
+        toast.success(
+        "Horario agregado correctamente."
       );
+      
+          }
+        } catch (err) {
+       const message =
+         err.message ||
+         "No se pudo guardar el horario.";
+
+       setError(message);
+       toast.error(message);
+     } finally {
+       setSavingId(null);
+     }
+};
+
+  const removeAvailabilitySlot = async (item) => {
+    const slotKey = item.id || item.tempId;
+
+    if (item.isNew) {
+      setAvailability((current) =>
+        current.filter(
+          (availability) =>
+            availability.tempId !== item.tempId
+        )
+      );
+
       return;
     }
 
-    setError("");
-    setForm(EMPTY_FORM);
-    setShowCreateModal(true);
-  };
-
-  const closeCreateModal = () => {
-    setShowCreateModal(false);
-    setForm(EMPTY_FORM);
-    setError("");
-  };
-
-  const createAvailability = async () => {
-    if (!validateForm()) return;
-
     try {
-      setSaving(true);
-      setError("");
-
-      await createAvailabilityApi(
-        selectedProfessionalId,
-        {
-          dayOfWeek: form.dayOfWeek,
-          startTime: form.startTime,
-          endTime: form.endTime,
-        },
-        token
-      );
-
-      await getAvailability(selectedProfessionalId);
-
-      closeCreateModal();
-    } catch (err) {
-      setError(
-        err.message ||
-          "No se pudo crear la disponibilidad."
-      );
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // =========================
-  // EDITAR
-  // =========================
-
-  const openEditModal = (item) => {
-    setError("");
-
-    setSelectedAvailability(item);
-
-    setForm({
-      dayOfWeek: item.dayOfWeek,
-      startTime: item.startTime?.slice(0, 5) || "",
-      endTime: item.endTime?.slice(0, 5) || "",
-    });
-  };
-
-  const closeEditModal = () => {
-    setSelectedAvailability(null);
-    setForm(EMPTY_FORM);
-    setError("");
-  };
-
-  const updateAvailability = async () => {
-    if (!validateForm()) return;
-
-    try {
-      setSaving(true);
-      setError("");
-
-      await updateAvailabilityApi(
-        selectedAvailability.id,
-        {
-          dayOfWeek: form.dayOfWeek,
-          startTime: form.startTime,
-          endTime: form.endTime,
-        },
-        token
-      );
-
-      await getAvailability(selectedProfessionalId);
-
-      closeEditModal();
-    } catch (err) {
-      setError(
-        err.message ||
-          "No se pudo actualizar la disponibilidad."
-      );
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // =========================
-  // ELIMINAR
-  // =========================
-
-  const deleteAvailability = async () => {
-    if (!selectedAvailability) return;
-
-    try {
-      setSaving(true);
+      setSavingId(slotKey);
       setError("");
 
       await deleteAvailabilityApi(
-        selectedAvailability.id,
+        item.id,
         token
       );
 
-      await getAvailability(selectedProfessionalId);
-
-      closeEditModal();
-    } catch (err) {
-      setError(
-        err.message ||
-          "No se pudo eliminar la disponibilidad."
+      await getAvailability(
+        selectedProfessionalId
       );
+      toast.success("Horario eliminado correctamente.");
+    } catch (err) {
+      const message =
+        err.message ||
+        "No se pudo eliminar el horario.";
+
+      setError(message);
+      toast.error(message);
     } finally {
-      setSaving(false);
+      setSavingId(null);
+    }
+  };
+
+  const getBlocks = async (professionalId) => {
+  if (!professionalId) {
+    setBlocks([]);
+    return;
+  }
+
+  try {
+    setLoadingBlocks(true);
+    setError("");
+
+    const data =
+      await fetchProfessionalBlocks(
+        professionalId,
+        token
+      );
+
+    setBlocks(
+      Array.isArray(data) ? data : []
+    );
+  } catch (err) {
+    setError(
+      err.message ||
+        "No se pudieron obtener los bloqueos."
+    );
+
+    setBlocks([]);
+  } finally {
+    setLoadingBlocks(false);
+  }
+};
+
+
+const saveBlock = async () => {
+    if (!selectedRange?.from) {
+    setError(
+      "Seleccioná al menos una fecha para crear el bloqueo."
+    );
+    return;
+  }
+
+    const startDate = selectedRange.from;
+    const endDate =
+    selectedRange.to || selectedRange.from;
+
+  try {
+    setSavingBlock(true);
+    setError("");
+
+      await createProfessionalBlock(
+      selectedProfessionalId,
+      {
+        startDate: formatLocalDate(startDate),
+        endDate: formatLocalDate(endDate),
+        reason:
+          blockReason.trim() || undefined,
+      },
+      token
+    );
+
+    await getBlocks(selectedProfessionalId);
+
+      setSelectedRange(undefined);
+    setBlockReason("");
+    toast.success("Bloqueo creado correctamente.");
+  } catch (err) {
+    const message =
+        err.message ||
+        "No se pudo crear el bloqueo.";
+
+      setError(message);
+      toast.error(message);
+  } finally {
+    setSavingBlock(false);
+  }
+};
+
+const removeBlock = async (id) => {
+    try {
+      setSavingBlock(true);
+      setError("");
+
+      await deleteProfessionalBlock(
+        id,
+        token
+      );
+
+      await getBlocks(
+        selectedProfessionalId
+      );
+      toast.success("Bloqueo eliminado correctamente.");
+    } catch (err) {
+      const message =
+        err.message ||
+        "No se pudo eliminar el bloqueo.";
+        
+      setError(message);
+      toast.error(message);
+    } finally {
+      setSavingBlock(false);
     }
   };
 
@@ -303,83 +641,46 @@ const AdminAvailability = () => {
   // =========================
 
   const availabilityByDay = useMemo(() => {
-    const grouped = {};
+      const grouped = {};
 
-    DAYS.forEach((day) => {
-      grouped[day.value] = [];
-    });
+      DAYS.forEach((day) => {
+        grouped[day.value] = [];
+      });
 
-    availability.forEach((item) => {
-      if (grouped[item.dayOfWeek]) {
-        grouped[item.dayOfWeek].push(item);
-      }
-    });
+      availability.forEach((item) => {
+        if (grouped[item.dayOfWeek]) {
+          grouped[item.dayOfWeek].push(item);
+        }
+      });
 
-    Object.values(grouped).forEach((items) => {
-      items.sort((a, b) =>
-        a.startTime.localeCompare(b.startTime)
-      );
-    });
+      Object.values(grouped).forEach((items) => {
+        items.sort((a, b) =>
+          (a.startTime || "").localeCompare(
+            b.startTime || ""
+          )
+        );
+      });
 
     return grouped;
   }, [availability]);
 
-  const selectedProfessional =
-    professionals.find(
+  const selectedProfessional = professionals.find(
       (professional) =>
         professional.id === selectedProfessionalId
     );
+    if (loading) {
+      return <p>Cargando disponibilidad...</p>;
+    }
 
-  const renderForm = () => (
-    <div className="availability-form">
-      <label>
-        Día
+  //==========================================//
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const blockedRanges = blocks.map((block) => ({
+  from: parseLocalDate(block.startDate),
+  to: parseLocalDate(block.endDate),
 
-        <select
-          name="dayOfWeek"
-          value={form.dayOfWeek}
-          onChange={handleFormChange}
-        >
-          {DAYS.map((day) => (
-            <option
-              key={day.value}
-              value={day.value}
-            >
-              {day.label}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <div className="availability-form-row">
-        <label>
-          Desde
-
-          <input
-            type="time"
-            name="startTime"
-            value={form.startTime}
-            onChange={handleFormChange}
-          />
-        </label>
-
-        <label>
-          Hasta
-
-          <input
-            type="time"
-            name="endTime"
-            value={form.endTime}
-            onChange={handleFormChange}
-          />
-        </label>
-      </div>
-    </div>
-  );
-
-  if (loading) {
-    return <p>Cargando disponibilidad...</p>;
-  }
+}));
 
   return (
     <div className="admin-page">
@@ -392,9 +693,7 @@ const AdminAvailability = () => {
         </p>
       </div>
 
-      {error &&
-        !showCreateModal &&
-        !selectedAvailability && (
+      {error && (
           <p className="admin-error">{error}</p>
         )}
 
@@ -426,16 +725,76 @@ const AdminAvailability = () => {
           </select>
         </div>
 
-        <button
-          type="button"
-          className="admin-create-button"
-          onClick={openCreateModal}
-          disabled={!selectedProfessionalId}
-        >
-          <span>+</span>
-          Agregar horario
-        </button>
       </div>
+
+      {showUnsavedWarning && (
+        <div className="availability-unsaved-warning">
+          <div>
+            <strong>Tenés cambios sin guardar.</strong>
+
+            <p>
+              Si cambiás de profesional, se perderán las
+              modificaciones pendientes.
+            </p>
+          </div>
+
+          <div className="availability-unsaved-actions">
+            <button
+              type="button"
+              className="admin-action-secondary"
+              onClick={keepEditing}
+            >
+              Seguir editando
+            </button>
+
+            <button
+              type="button"
+              className="admin-action-danger"
+              onClick={discardChangesAndContinue}
+            >
+              Descartar y continuar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {selectedProfessionalId && (
+          <div className="availability-tabs">
+            <button
+              type="button"
+              className={`availability-tab ${
+                activeSection === "schedule"
+                  ? "active"
+                  : ""
+              }`}
+              onClick={() =>
+                setActiveSection("schedule")
+              }
+            >
+              Horario semanal
+            </button>
+            
+            <button
+              type="button"
+              className={`availability-tab ${
+                activeSection === "blocks"
+                  ? "active"
+                  : ""
+              }`}
+              onClick={() =>
+                setActiveSection("blocks")
+              }
+            >
+              Ausencias y bloqueos
+            
+              {blocks.length > 0 && (
+                <span className="availability-tab-count">
+                  {blocks.length}
+                </span>
+              )}
+            </button>
+          </div>
+        )}
 
       {!selectedProfessionalId ? (
         <div className="admin-card availability-empty-state">
@@ -447,7 +806,9 @@ const AdminAvailability = () => {
           </p>
         </div>
       ) : (
-        <div className="admin-card">
+        <>
+          {activeSection === "schedule" && (
+            <div className="admin-card">
           <div className="admin-card-header">
             <div>
               <h2>
@@ -468,203 +829,419 @@ const AdminAvailability = () => {
           </div>
 
           {loadingAvailability ? (
-            <p className="availability-loading">
-              Cargando horarios...
-            </p>
-          ) : (
-            <div className="availability-week">
+  <p className="availability-loading">
+          Cargando horarios...
+        </p>
+      ) : (
+        <>
+          <div className="availability-bulk-editor">
+            <div className="availability-bulk-header">
+              <div>
+                <strong>
+                  Asignar horario a varios días
+                </strong>
+      
+                <span>
+                  Seleccioná los días y definí una
+                  franja común.
+                </span>
+              </div>
+      
+              {selectedScheduleDays.length > 0 && (
+                <span className="availability-selected-count">
+                  {selectedScheduleDays.length}{" "}
+                  {selectedScheduleDays.length === 1
+                    ? "día seleccionado"
+                    : "días seleccionados"}
+                </span>
+              )}
+            </div>
+            
+            <div className="availability-day-selector">
               {DAYS.map((day) => {
-                const dayAvailability =
-                  availabilityByDay[day.value];
-
+                const selected =
+                  selectedScheduleDays.includes(
+                    day.value
+                  );
+                
                 return (
-                  <div
-                    className="availability-day"
+                  <button
                     key={day.value}
+                    type="button"
+                    className={`availability-day-chip ${
+                      selected ? "selected" : ""
+                    }`}
+                    onClick={() =>
+                      toggleScheduleDay(day.value)
+                    }
                   >
-                    <div className="availability-day-name">
-                      <strong>{day.label}</strong>
-                    </div>
-
-                    <div className="availability-day-slots">
-                      {dayAvailability.length > 0 ? (
-                        dayAvailability.map((item) => (
-                          <button
-                            key={item.id}
-                            type="button"
-                            className="availability-slot"
-                            onClick={() =>
-                              openEditModal(item)
-                            }
-                          >
-                            <span>
-                              {item.startTime?.slice(0, 5)}
-                            </span>
-
-                            <span>—</span>
-
-                            <span>
-                              {item.endTime?.slice(0, 5)}
-                            </span>
-
-                            <small>Editar</small>
-                          </button>
-                        ))
-                      ) : (
-                        <span className="availability-no-slots">
-                          Sin atención
-                        </span>
-                      )}
-                    </div>
-                  </div>
+                    {day.label}
+                  </button>
                 );
               })}
             </div>
-          )}
-        </div>
-      )}
-
-      {/* CREAR */}
-      {showCreateModal && (
-        <div
-          className="admin-modal-overlay"
-          onClick={closeCreateModal}
-        >
-          <div
-            className="admin-modal"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="admin-modal-header">
-              <div>
-                <h2>Agregar disponibilidad</h2>
-
-                <p>
-                  {selectedProfessional?.user?.name ||
-                    "Profesional"}
-                </p>
-              </div>
-
+            
+            <div className="availability-bulk-controls">
+              <label>
+                <span>Desde</span>
+            
+                <input
+                  type="time"
+                  value={bulkStartTime}
+                  onChange={(e) =>
+                    setBulkStartTime(e.target.value)
+                  }
+                />
+              </label>
+                
+              <label>
+                <span>Hasta</span>
+                
+                <input
+                  type="time"
+                  value={bulkEndTime}
+                  onChange={(e) =>
+                    setBulkEndTime(e.target.value)
+                  }
+                />
+              </label>
+                
               <button
                 type="button"
-                className="admin-modal-close"
-                onClick={closeCreateModal}
+                className="availability-primary-button"
+                onClick={saveBulkAvailability}
+                disabled={
+                  savingBulk ||
+                  selectedScheduleDays.length === 0
+                }
               >
-                ×
-              </button>
-            </div>
-
-            <div className="admin-modal-scroll">
-              <div className="admin-modal-body">
-                {error && (
-                  <p className="admin-error">
-                    {error}
-                  </p>
-                )}
-
-                {renderForm()}
-              </div>
-            </div>
-
-            <div className="admin-modal-actions">
-              <button
-                type="button"
-                className="admin-action-secondary"
-                onClick={closeCreateModal}
-                disabled={saving}
-              >
-                Cancelar
-              </button>
-
-              <button
-                type="button"
-                className="admin-action-primary"
-                onClick={createAvailability}
-                disabled={saving}
-              >
-                {saving
-                  ? "Guardando..."
-                  : "Agregar horario"}
+                {savingBulk
+                  ? "Asignando..."
+                  : "Asignar franja"}
               </button>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* EDITAR */}
-      {selectedAvailability && (
-        <div
-          className="admin-modal-overlay"
-          onClick={closeEditModal}
-        >
-          <div
-            className="admin-modal"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="admin-modal-header">
-              <div>
-                <h2>Editar disponibilidad</h2>
-
-                <p>
-                  Modificá el día o el horario del bloque.
-                </p>
-              </div>
-
-              <button
-                type="button"
-                className="admin-modal-close"
-                onClick={closeEditModal}
+                
+          <div className="availability-week">  
+                {DAYS.map((day) => {
+            const dayAvailability =
+              availabilityByDay[day.value];
+          
+            return (
+              <div
+                className="availability-day"
+                key={day.value}
               >
-                ×
-              </button>
-            </div>
-
-            <div className="admin-modal-scroll">
-              <div className="admin-modal-body">
-                {error && (
-                  <p className="admin-error">
-                    {error}
-                  </p>
-                )}
-
-                {renderForm()}
-              </div>
-            </div>
-
-            <div className="admin-modal-actions">
-              <button
-                type="button"
-                className="admin-action-danger"
-                onClick={deleteAvailability}
-                disabled={saving}
-              >
-                Eliminar horario
-              </button>
-
-              <button
-                type="button"
-                className="admin-action-secondary"
-                onClick={closeEditModal}
-                disabled={saving}
-              >
-                Cancelar
-              </button>
-
-              <button
-                type="button"
-                className="admin-action-primary"
-                onClick={updateAvailability}
-                disabled={saving}
-              >
-                {saving
-                  ? "Guardando..."
-                  : "Guardar cambios"}
-              </button>
-            </div>
+                <div className="availability-day-name">
+                  <strong>{day.label}</strong>
+            
+                  <span>
+                    {dayAvailability.length
+                      ? `${dayAvailability.length} ${
+                          dayAvailability.length === 1
+                            ? "franja"
+                            : "franjas"
+                        }`
+                      : "Sin atención"}
+                  </span>
+                </div>
+                      
+                <div className="availability-day-content">
+                  <div className="availability-day-slots">
+                    {dayAvailability.map((item) => {
+                      const slotKey =
+                        item.id || item.tempId;
+                    
+                      const isSaving =
+                        savingId === slotKey;
+                    
+                      return (
+                        <div
+                          className="availability-slot-row"
+                          key={slotKey}
+                        >
+                          <div className="availability-time-field">
+                            <span>Desde</span>
+                      
+                            <input
+                              type="time"
+                              value={
+                                item.startTime?.slice(
+                                  0,
+                                  5
+                                ) || ""
+                              }
+                              onChange={(e) =>
+                                handleSlotChange(
+                                  slotKey,
+                                  "startTime",
+                                  e.target.value
+                                )
+                              }
+                              disabled={isSaving}
+                            />
+                          </div>
+                            
+                          <span className="availability-time-separator">
+                            —
+                          </span>
+                            
+                          <div className="availability-time-field">
+                            <span>Hasta</span>
+                            
+                            <input
+                              type="time"
+                              value={
+                                item.endTime?.slice(
+                                  0,
+                                  5
+                                ) || ""
+                              }
+                              onChange={(e) =>
+                                handleSlotChange(
+                                  slotKey,
+                                  "endTime",
+                                  e.target.value
+                                )
+                              }
+                              disabled={isSaving}
+                            />
+                          </div>
+                            
+                          <div className="availability-slot-actions">
+                            <button
+                              type="button"
+                              className="availability-save-button"
+                              onClick={() =>
+                                saveAvailabilitySlot(
+                                  item
+                                )
+                              }
+                              disabled={isSaving}
+                              title="Guardar horario"
+                            >
+                              {isSaving ? "..." : "✓"}
+                            </button>
+                            
+                            <button
+                              type="button"
+                              className="availability-delete-button"
+                              onClick={() =>
+                                removeAvailabilitySlot(
+                                  item
+                                )
+                              }
+                              disabled={isSaving}
+                              title="Eliminar horario"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
           </div>
+
+          <button
+            type="button"
+            className="availability-add-slot"
+            onClick={() =>
+              addAvailabilitySlot(day.value)
+            }
+          >
+            + Agregar franja
+          </button>
         </div>
+      </div>
+    );
+  })}
+  </div>
+  </>
+      )},
+</div>
+          
       )}
+
+
+{activeSection === "blocks" && (
+  <div className="admin-card availability-blocks-card">
+    <div className="admin-card-header">
+      <div>
+        <h2>Ausencias y bloqueos</h2>
+        <span>
+          Configurá vacaciones, licencias u otros
+          períodos en los que el profesional no estará
+          disponible.
+        </span>
+      </div>
+
+      <span>
+        {blocks.length}{" "}
+        {blocks.length === 1
+          ? "bloqueo"
+          : "bloqueos"}
+      </span>
     </div>
-  );
+
+    <div className="availability-blocks-layout">
+      <div className="availability-calendar-section">
+        <DayPicker
+          mode="range"
+          locale={es}
+          selected={selectedRange}
+          onSelect={setSelectedRange}
+          disabled={{
+            before: today,
+          }}
+          modifiers={{
+            today,
+            blocked: blockedRanges,
+          }}
+          modifiersClassNames={{
+            today: "availability-calendar-today",
+            blocked: "availability-calendar-blocked",
+          }}
+        />
+
+        <div className="availability-calendar-legend">
+            <span>
+              <i className="today" />
+              Hoy
+            </span>
+
+            <span>
+              <i className="selected" />
+              Selección
+            </span>
+
+            <span>
+              <i className="blocked" />
+              Bloqueado
+            </span>
+          </div>
+      </div>
+
+      <div className="availability-block-form">
+        <h3>Nuevo bloqueo</h3>
+
+        <div className="availability-range-summary">
+          <div>
+            <span>Desde</span>
+
+            <strong>
+              {selectedRange?.from
+                ? selectedRange.from.toLocaleDateString(
+                    "es-AR"
+                  )
+                : "Seleccionar"}
+            </strong>
+          </div>
+
+          <div>
+            <span>Hasta</span>
+
+            <strong>
+              {selectedRange?.to
+                ? selectedRange.to.toLocaleDateString(
+                    "es-AR"
+                  )
+                : selectedRange?.from
+                  ? selectedRange.from.toLocaleDateString(
+                      "es-AR"
+                    )
+                  : "Seleccionar"}
+            </strong>
+          </div>
+        </div>
+
+        <label>
+          Motivo
+          <input
+            type="text"
+            value={blockReason}
+            maxLength={150}
+            onChange={(e) =>
+              setBlockReason(e.target.value)
+            }
+            placeholder="Ej. Vacaciones"
+          />
+        </label>
+
+        <button
+          type="button"
+          className="availability-primary-button"
+          onClick={saveBlock}
+          disabled={
+            savingBlock ||
+            !selectedRange?.from
+          }
+        >
+          {savingBlock
+            ? "Guardando..."
+            : "Bloquear período"}
+        </button>
+      </div>
+    </div>
+
+    <div className="availability-block-list">
+      <h3>Bloqueos configurados</h3>
+
+      {loadingBlocks ? (
+        <p className="availability-loading">
+          Cargando bloqueos...
+        </p>
+      ) : blocks.length === 0 ? (
+        <p className="availability-no-blocks">
+          No hay ausencias o bloqueos configurados
+          para este profesional.
+        </p>
+      ) : (
+        blocks.map((block) => (
+          <div
+            key={block.id}
+            className="availability-block-item"
+          >
+            <div className="availability-block-info">
+              <strong>
+                {parseLocalDate(
+                  block.startDate
+                ).toLocaleDateString("es-AR")}
+                {" — "}
+                {parseLocalDate(
+                  block.endDate
+                ).toLocaleDateString("es-AR")}
+              </strong>
+
+              <span>
+                {block.reason || "Sin motivo"}
+              </span>
+            </div>
+
+            <button
+              type="button"
+              className="availability-delete-button"
+              onClick={() =>
+                removeBlock(block.id)
+              }
+              disabled={savingBlock}
+              title="Eliminar bloqueo"
+            >
+              ×
+            </button>
+          </div>
+        ))
+      )}
+          </div>
+        </div>
+      )}
+
+    </>
+  )}
+
+  
+
+</div>
+);
 };
 
 export default AdminAvailability;

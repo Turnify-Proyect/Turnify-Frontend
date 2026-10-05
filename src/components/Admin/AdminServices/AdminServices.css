@@ -20,13 +20,17 @@
   color: #666;
 }
 
+/* =========================
+   Formulario
+========================= */
+
 .service-form {
   display: flex;
   flex-direction: column;
   gap: 18px;
 }
 
-.service-form label {
+.service-form label:not(.service-image-upload-button) {
   display: flex;
   flex-direction: column;
   gap: 7px;
@@ -71,6 +75,10 @@
   gap: 14px;
 }
 
+/* =========================
+   Imagen detalle
+========================= */
+
 .service-detail-image {
   display: block;
 
@@ -84,8 +92,223 @@
   object-fit: cover;
 }
 
-@media (max-width: 650px) {
+/* =========================
+   Categorías
+========================= */
+
+.category-select-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.category-select-row select {
+  flex: 1;
+}
+
+.category-delete-button {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+
+  border: 1px solid #e3b6b6;
+  border-radius: 8px;
+
+  background: #fff7f7;
+
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.category-delete-button:hover:not(:disabled) {
+  background: #fdeaea;
+}
+
+.category-delete-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.category-inline-create {
+  display: grid;
+  grid-template-columns: 1fr 120px auto;
+  gap: 10px;
+  align-items: center;
+
+  margin-top: 10px;
+  padding: 12px;
+
+  border: 1px solid var(--border);
+  border-radius: 10px;
+
+  background-color: var(--background);
+}
+
+.category-inline-create input {
+  width: 100%;
+}
+
+.category-create-button {
+  min-height: 40px;
+  padding: 0 16px;
+
+  border: none;
+  border-radius: 8px;
+
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+  white-space: nowrap;
+
+  transition: background-color 0.2s ease;
+}
+
+.category-create-button:hover:not(:disabled) {
+  background-color: #5a7a69;
+}
+
+.category-create-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* =========================
+   Imagen del servicio
+========================= */
+
+.service-image-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+
+  width: 100%;
+}
+
+.service-image-label {
+  display: block;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  color: var(--foreground);
+}
+
+.service-form .service-image-upload-button {
+  width: 100%;
+  min-height: 46px;
+
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+
+  box-sizing: border-box;
+  padding: 0 14px;
+
+  border: 1px solid var(--border);
+  border-radius: 9px;
+
+  background: var(--card);
+  color: var(--foreground);
+
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+
+  cursor: pointer;
+
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.service-form
+  .service-image-upload-button:hover:not(.disabled) {
+  border-color: var(--primary);
+  background-color: var(--secondary);
+}
+
+.service-image-upload-button.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.service-image-upload-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 26px;
+  height: 26px;
+
+  border-radius: 6px;
+
+  background-color: var(--secondary);
+  color: var(--primary);
+
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.service-image-message {
+  margin: 0;
+
+  font-size: 13px;
+  color: var(--muted-foreground);
+}
+
+.service-image-preview {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  margin-top: 4px;
+  padding: 10px;
+
+  border: 1px solid var(--border);
+  border-radius: 9px;
+
+  background-color: var(--background);
+}
+
+.service-image-preview img {
+  width: 64px;
+  height: 64px;
+
+  flex-shrink: 0;
+
+  border-radius: 7px;
+
+  object-fit: cover;
+}
+
+.service-image-preview span {
+  color: var(--primary);
+
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* =========================
+   Responsive
+========================= */
+
+@media (max-width: 700px) {
   .service-form-row {
     grid-template-columns: 1fr;
+  }
+
+  .category-inline-create {
+    grid-template-columns: 1fr;
+  }
+
+  .category-create-button {
+    width: 100%;
   }
 }

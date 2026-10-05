@@ -15,7 +15,7 @@ const STATUS_LABELS = {
   expired: "Expirado",
 };
 
-const AdminOverview = () => {
+const AdminOverview = ({ onNavigate }) => {
   const { token } = useAuth();
 
   const [appointments, setAppointments] = useState([]);
@@ -40,6 +40,7 @@ const AdminOverview = () => {
           fetchOverviewProfessionals(token),
           fetchOverviewServices(token),
         ]);
+
 
         setAppointments(
           Array.isArray(appointmentsData)
@@ -111,21 +112,25 @@ const AdminOverview = () => {
       label: "Turnos de hoy",
       value: todayAppointments.length,
       icon: "◷",
+      section: "bookings",
     },
     {
       label: "Turnos pendientes",
       value: pendingAppointments,
       icon: "!",
+      section: "bookings",
     },
     {
       label: "Profesionales activos",
       value: activeProfessionals,
       icon: "P",
+      section: "professionals",
     },
     {
       label: "Servicios activos",
       value: activeServices,
       icon: "✦",
+      section: "services",
     },
   ];
 
@@ -188,53 +193,6 @@ const AdminOverview = () => {
       .slice(0, 5);
   }, [appointments]);
 
-  // =========================
-  // ÚLTIMOS 6 MESES
-  // =========================
-
-  const monthlyAppointments = useMemo(() => {
-    const today = new Date();
-
-    const months = [];
-
-    for (let i = 5; i >= 0; i--) {
-      const date = new Date(
-        today.getFullYear(),
-        today.getMonth() - i,
-        1
-      );
-
-      months.push({
-        year: date.getFullYear(),
-        month: date.getMonth(),
-        label: date.toLocaleDateString("es-AR", {
-          month: "short",
-        }),
-        value: 0,
-      });
-    }
-
-    appointments.forEach((appointment) => {
-      const date = new Date(appointment.startAt);
-
-      const month = months.find(
-        (item) =>
-          item.year === date.getFullYear() &&
-          item.month === date.getMonth()
-      );
-
-      if (month) {
-        month.value += 1;
-      }
-    });
-
-    return months;
-  }, [appointments]);
-
-  const maxMonthlyAppointments = Math.max(
-    ...monthlyAppointments.map((month) => month.value),
-    1
-  );
 
   if (loading) {
     return <p>Cargando resumen...</p>;
@@ -256,168 +214,134 @@ const AdminOverview = () => {
       {/* MÉTRICAS */}
       <div className="admin-stats-grid">
         {stats.map((stat) => (
-          <div
-            className="admin-stat-card"
+          <button
+            type="button"
+            className="admin-stat-card admin-stat-card-clickable"
             key={stat.label}
+            onClick={() =>
+              onNavigate(stat.section)
+            }
           >
             <div className="admin-stat-icon">
               {stat.icon}
             </div>
-
+          
             <div>
               <span className="admin-stat-value">
                 {stat.value}
               </span>
-
+          
               <p>{stat.label}</p>
             </div>
-          </div>
+          </button>
         ))}
       </div>
 
       <div className="admin-overview-grid">
-        {/* GRÁFICO */}
-        <div className="admin-overview-card">
-          <h2>Turnos por mes</h2>
+  {/* PRÓXIMOS TURNOS */}
+  <div className="admin-overview-card admin-upcoming">
+    <div className="admin-overview-title-row">
+      <h2>Próximos turnos</h2>
 
-          <div className="admin-monthly-chart">
-            {monthlyAppointments.map((month) => {
-              const height =
-                month.value === 0
-                  ? 0
-                  : Math.max(
-                      (month.value /
-                        maxMonthlyAppointments) *
-                        100,
-                      8
-                    );
+      <button
+        type="button"
+        className="admin-overview-link"
+        onClick={() => onNavigate("bookings")}
+      >
+        Ver reservas →
+      </button>
+    </div>
 
-              return (
-                <div
-                  className="admin-chart-column"
-                  key={`${month.year}-${month.month}`}
-                >
-                  <div className="admin-chart-value">
-                    {month.value}
-                  </div>
+    <div className="admin-table-wrapper">
+      <table className="admin-table">
+        <thead>
+          <tr>
+            <th>Fecha</th>
+            <th>Hora</th>
+            <th>Cliente</th>
+            <th>Servicio</th>
+            <th>Profesional</th>
+            <th>Estado</th>
+          </tr>
+        </thead>
 
-                  <div className="admin-chart-bar-container">
-                    <div
-                      className="admin-chart-bar"
-                      style={{
-                        height: `${height}%`,
-                      }}
-                    />
-                  </div>
+        <tbody>
+          {upcomingAppointments.length > 0 ? (
+            upcomingAppointments.map(
+              (appointment) => (
+                <tr key={appointment.id}>
+                  <td>
+                    {new Date(
+                      appointment.startAt
+                    ).toLocaleDateString("es-AR")}
+                  </td>
 
-                  <span>
-                    {month.label.replace(".", "")}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+                  <td>
+                    {new Date(
+                      appointment.startAt
+                    ).toLocaleTimeString("es-AR", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </td>
 
-        {/* ACTIVIDAD DE HOY */}
-        <div className="admin-overview-card">
-          <h2>Actividad de hoy</h2>
+                  <td>
+                    {appointment.user?.name || "-"}
+                  </td>
 
-          <div className="admin-status-list">
-            {todayStatus.map((status) => (
-              <div
-                className="admin-status-row"
-                key={status.label}
-              >
-                <span>{status.label}</span>
-                <strong>{status.value}</strong>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+                  <td>
+                    {appointment.service?.name || "-"}
+                  </td>
 
-      {/* PRÓXIMOS TURNOS */}
-      <div className="admin-overview-card admin-upcoming">
-        <div className="admin-overview-title-row">
-          <h2>Próximos turnos</h2>
+                  <td>
+                    {appointment.professional?.user
+                      ?.name || "-"}
+                  </td>
 
-          <span>
-            {upcomingAppointments.length > 0
-              ? `Próximos ${upcomingAppointments.length}`
-              : "Sin turnos próximos"}
-          </span>
-        </div>
-
-        <div className="admin-table-wrapper">
-          <table className="admin-table">
-            <thead>
-              <tr>
-                <th>Fecha</th>
-                <th>Hora</th>
-                <th>Cliente</th>
-                <th>Servicio</th>
-                <th>Profesional</th>
-                <th>Estado</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {upcomingAppointments.length > 0 ? (
-                upcomingAppointments.map((appointment) => (
-                  <tr key={appointment.id}>
-                    <td>
-                      {new Date(
-                        appointment.startAt
-                      ).toLocaleDateString("es-AR")}
-                    </td>
-
-                    <td>
-                      {new Date(
-                        appointment.startAt
-                      ).toLocaleTimeString("es-AR", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </td>
-
-                    <td>
-                      {appointment.user?.name || "-"}
-                    </td>
-
-                    <td>
-                      {appointment.service?.name || "-"}
-                    </td>
-
-                    <td>
-                      {appointment.professional?.user?.name ||
-                        "-"}
-                    </td>
-
-                    <td>
-                      <span
-                        className={`status-badge ${appointment.status}`}
-                      >
-                        {STATUS_LABELS[appointment.status] ||
-                          appointment.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td
-                    colSpan="6"
-                    className="admin-empty"
-                  >
-                    No hay próximos turnos.
+                  <td>
+                    <span
+                      className={`status-badge ${appointment.status}`}
+                    >
+                      {STATUS_LABELS[
+                        appointment.status
+                      ] || appointment.status}
+                    </span>
                   </td>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              )
+            )
+          ) : (
+            <tr>
+              <td
+                colSpan="6"
+                className="admin-empty"
+              >
+                No hay próximos turnos.
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  {/* ACTIVIDAD DE HOY */}
+  <div className="admin-overview-card">
+    <h2>Actividad de hoy</h2>
+
+    <div className="admin-status-list">
+      {todayStatus.map((status) => (
+        <div
+          className="admin-status-row"
+          key={status.label}
+        >
+          <span>{status.label}</span>
+          <strong>{status.value}</strong>
         </div>
-      </div>
+      ))}
+    </div>
+  </div>
+</div>
     </section>
   );
 };

@@ -280,3 +280,18 @@
   font-size: 12px;
   color: #c62828;
 }
+
+.sessionExpiredMessage {
+  margin: 16px 0;
+  padding: 12px 14px;
+  border: 1px solid #ead8ca;
+  border-radius: 10px;
+  background: #fff8f3;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #5f5148;
+}
+
+.sessionExpiredMessage strong {
+  font-weight: 600;
+}

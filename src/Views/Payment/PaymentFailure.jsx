@@ -18,12 +18,16 @@ function PaymentFailure() {
         </p>
 
         <button
-          type="button"
-          className="payment-result-primary-button"
-          onClick={() => navigate("/checkout", { state: booking })}
-        >
-          Reintentar pago
-        </button>
+            type="button"
+            className="payment-result-primary-button"
+            onClick={() =>
+              navigate(`/checkout/${booking.orderId}`, {
+                state: booking,
+              })
+            }
+          >
+            Reintentar pago
+          </button>
 
         <button
           type="button"
