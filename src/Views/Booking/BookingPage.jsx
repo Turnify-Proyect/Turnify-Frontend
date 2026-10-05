@@ -13,7 +13,6 @@ function BookingPage() {
   const preselectedServiceId = location.state?.serviceId;
   const [professionals, setProfessionals] = useState([]);
   const [services, setServices] = useState([]);
-  const [availabilities, setAvailabilities] = useState([]);
   const [bookingError, setBookingError] = useState("");
   const [availableTimes, setAvailableTimes] = useState([]);
   const [loadingTimes, setLoadingTimes] = useState(false);
@@ -21,9 +20,7 @@ function BookingPage() {
 
   const { token } = useAuth();
 
-  const [step, setStep] = useState(
-    preselectedServiceId ? 2 : 1
-  );
+  const [step, setStep] = useState(1);
 
   const stepLabels = [
     "Servicio",
@@ -91,65 +88,14 @@ function BookingPage() {
     
       getProfessionals();
     }, [selected.service]);
+
+
+const days = Array.from({ length: 14 }, (_, index) => {
+  const date = new Date();
+  date.setDate(date.getDate() + index + 1);
+  return date;
+});
   
-
-    const dayNames = [
-    "sunday",
-    "monday",
-    "tuesday",
-    "wednesday",
-    "thursday",
-    "friday",
-    "saturday",
-  ]//;
-
-  const days = Array.from({ length: 14 }, (_, index) => {
-    const date = new Date();
-    date.setDate(date.getDate() + index + 1);
-    return date;
-  }).filter((date) => {
-    const dayOfWeek = dayNames[date.getDay()]//
-    return availabilities.some(
-      (availability) =>
-        availability.dayOfWeek === dayOfWeek
-    );
-  });
-
-  useEffect(() => {
-  const getAvailabilities = async () => {
-    if (!selected.professional || !token) {
-      setAvailabilities([]);
-      return;
-    }
-
-    try {
-      const response = await fetch(
-        `${API_URL}/availability/professional/${selected.professional}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(
-          "No se pudo obtener la disponibilidad del profesional"
-        );
-      }
-
-      const data = await response.json();
-
-      setAvailabilities(data);
-    } catch (error) {
-      console.error(error);
-      setAvailabilities([]);
-    }
-  };
-
-  getAvailabilities();
-}, [selected.professional, token]);
-      
 
 useEffect(() => {
   const getAvailableTimes = async () => {
@@ -326,7 +272,6 @@ const deposit =
   });
 
   setProfessionals([]);
-  setAvailabilities([]);
 
   setStep(1);
 }
@@ -350,7 +295,6 @@ function handleRemoveBookingItem(index) {
     });
 
     setProfessionals([]);
-    setAvailabilities([]);
 
     setStep(1);
     return;
@@ -409,8 +353,13 @@ async function handleConfirm() {
 
       navigate("/dashboard");
     } catch (error) {
-      console.error(error);
-    }
+    console.error(error);
+
+    setBookingError(
+      error.message ||
+        "No pudimos reprogramar el turno. Intentá nuevamente."
+    );
+}
 
     return;
   }

@@ -506,3 +506,17 @@
   cursor: pointer;
   white-space: nowrap;
 }
+
+.reschedule-limit-message {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 16px;
+  border-radius: 10px;
+  background: #f1f5f3;
+  color: var(--primary);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.2;
+  white-space: nowrap;
+}
