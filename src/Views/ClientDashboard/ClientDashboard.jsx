@@ -124,42 +124,49 @@ function ClientDashboard() {
   };
 
      const handleSaveProfile = async () => {
-     try {
-       const response = await fetch(`${API_URL}/users/${profile.id}`, {
-         method: "PUT",
-         headers: {
-           "Content-Type": "application/json",
-           Authorization: `Bearer ${token}`,
-         },
-         body: JSON.stringify({
-           name: profileData.name,
-           email: profileData.email,
-           phone: profileData.phone,
-           country: profileData.country,
-           city: profileData.city,
-           address: profileData.address,
-         }),
-       }); 
-
-       if (!response.ok) {
-         const errorData = await response.json();
-         throw new Error(
-           errorData.message || "No se pudo actualizar el perfil"
-         );
-       }   
-
-       const updatedUser = await response.json();  
-
-       setProfile((currentProfile) => ({
-         ...currentProfile,
-         ...profileData,
-       }));    
-
-       alert("Perfil actualizado correctamente");
-     } catch (error) {
-       alert(error.message);
-     }
+  try {
+    const payload = {
+      name: profileData.name,
+      email: profileData.email,
+      phone: profileData.phone,
     };
+
+    // Los campos opcionales solo se envían si tienen contenido real,
+    // para no disparar las validaciones de longitud mínima del backend
+    // (country/address/city son @IsOptional() + @MinLength(), y un
+    // string vacío no cuenta como "ausente" para esa validación).
+    if (profileData.country?.trim()) payload.country = profileData.country;
+    if (profileData.address?.trim()) payload.address = profileData.address;
+    if (profileData.city?.trim()) payload.city = profileData.city;
+
+    const response = await fetch(`${API_URL}/users/${profile.id}`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(
+        errorData.message || "No se pudo actualizar el perfil"
+      );
+    }
+
+    const updatedUser = await response.json();
+
+    setProfile((currentProfile) => ({
+      ...currentProfile,
+      ...profileData,
+    }));
+
+    alert("Perfil actualizado correctamente");
+  } catch (error) {
+    alert(error.message);
+  }
+};
 
 
     const handleCancelAppointment = async (appointmentId) => {
