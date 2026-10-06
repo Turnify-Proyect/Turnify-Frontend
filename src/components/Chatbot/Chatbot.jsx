@@ -1,64 +1,146 @@
 import { useState } from "react";
 import "./Chatbot.css";
 
+const API_BASE_URL = "http://localhost:3000";
+
 function Chatbot() {
   const [open, setOpen] = useState(false);
-
-  const [messages, setMessages] = useState([
-    {
-      from: "bot",
-      text: "¡Hola! Soy Lumi, tu asistente de Turnify. ¿En qué te puedo ayudar? 🌿",
-    },
-  ]);
-
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [welcomeLoaded, setWelcomeLoaded] = useState(false);
 
-  const suggestions = [
-    "¿Cómo reservo un turno?",
-    "¿Cuáles son los horarios?",
-    "¿Cómo cancelo mi turno?",
-  ];
+  function addBotMessage(text) {
+    setMessages((current) => [...current, { from: "bot", text }]);
+  }
 
-  function send(text) {
-    const message = text || input;
+  function addApiMessages(response) {
+    const apiMessages = Array.isArray(response.messages)
+      ? response.messages
+      : [];
 
-    if (!message.trim()) return;
-
-    setMessages((prev) => [
-      ...prev,
-      {
-        from: "user",
-        text: message,
-      },
+    setMessages((current) => [
+      ...current,
+      ...apiMessages.map((message) => ({
+        from: message.role === "user" ? "user" : "bot",
+        text: message.content,
+        type: message.type,
+        payload: message.payload,
+      })),
     ]);
+  }
 
-    setInput("");
+  async function callApi(path, options = {}) {
+    setLoading(true);
 
-    setTimeout(() => {
-      let response =
-        "Entendido. Un momento mientras busco la mejor respuesta para vos. 😊";
+    try {
+      const response = await fetch(`${API_BASE_URL}${path}`, {
+        ...options,
+        headers: {
+          "Content-Type": "application/json",
+          ...options.headers,
+        },
+      });
 
-      const normalizedMessage = message.toLowerCase();
-
-      if (normalizedMessage.includes("reserv")) {
-        response =
-          "Para reservar, hacé clic en 'Reservar mi turno' y seguí los pasos.";
-      } else if (normalizedMessage.includes("cancel")) {
-        response =
-          "Podés cancelar tu turno desde 'Mis Turnos' en tu perfil.";
-      } else if (normalizedMessage.includes("horario")) {
-        response =
-          "Atendemos de lunes a sábado de 9:00 a 18:00 hs.";
+      if (!response.ok) {
+        throw new Error(`El servidor respondió con ${response.status}`);
       }
 
-      setMessages((prev) => [
-        ...prev,
-        {
-          from: "bot",
-          text: response,
-        },
-      ]);
-    }, 700);
+      const data = await response.json();
+      addApiMessages(data);
+      return true;
+    } catch (error) {
+      console.error("Error al comunicarse con Lumi:", error);
+      addBotMessage(
+        "No pude conectarme con Lumi. Verifica que el backend esté iniciado e intenta de nuevo.",
+      );
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function loadWelcome() {
+    const success = await callApi("/chatbot/welcome");
+    setWelcomeLoaded(success);
+  }
+
+  function toggleChat() {
+    if (!open && !welcomeLoaded && !loading) {
+      void loadWelcome();
+    }
+
+    setOpen((current) => !current);
+  }
+
+  async function send(text = input) {
+    const message = text.trim();
+
+    if (!message || loading) return;
+
+    setMessages((current) => [...current, { from: "user", text: message }]);
+    setInput("");
+
+    await callApi("/chatbot/message", {
+      method: "POST",
+      body: JSON.stringify({
+        userId: "web-guest",
+        text: message,
+      }),
+    });
+  }
+
+  async function handleOptionClick(label, message) {
+    if (loading) return;
+
+    const payload = message.payload || {};
+
+    if (message.type === "category") {
+      const category = payload.categories?.find(
+        (item) => `${item.icon} ${item.label}` === label,
+      );
+
+      if (category) {
+        setMessages((current) => [
+          ...current,
+          { from: "user", text: label },
+        ]);
+        await callApi(
+          `/chatbot/category/${encodeURIComponent(category.id)}`,
+        );
+        return;
+      }
+    }
+
+    if (payload.action === "faq_question" && payload.category) {
+      setMessages((current) => [...current, { from: "user", text: label }]);
+
+      const params = new URLSearchParams({
+        category: payload.category,
+        question: label,
+      });
+
+      await callApi(`/chatbot/answer?${params.toString()}`);
+      return;
+    }
+
+    await send(label);
+  }
+
+  function getOptions(message) {
+    const payload = message.payload || {};
+
+    if (message.type === "category" && Array.isArray(payload.categories)) {
+      return payload.categories.map(
+        (category) => `${category.icon} ${category.label}`,
+      );
+    }
+
+    if (message.type === "buttons" && Array.isArray(payload.buttons)) {
+      return payload.buttons;
+    }
+
+    return [];
   }
 
   return (
@@ -76,7 +158,8 @@ function Chatbot() {
             <button
               type="button"
               className="chatbot-close"
-              onClick={() => setOpen(false)}
+              onClick={toggleChat}
+              aria-label="Cerrar chat"
             >
               ×
             </button>
@@ -85,7 +168,7 @@ function Chatbot() {
           <div className="chatbot-messages">
             {messages.map((message, index) => (
               <div
-                key={index}
+                key={`${index}-${message.text}`}
                 className={`chatbot-message-row ${
                   message.from === "user" ? "user" : "bot"
                 }`}
@@ -97,40 +180,47 @@ function Chatbot() {
                 >
                   {message.text}
                 </div>
+
+                {message.from === "bot" &&
+                  getOptions(message).map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      className="chatbot-suggestion"
+                      disabled={loading}
+                      onClick={() => handleOptionClick(option, message)}
+                    >
+                      {option}
+                    </button>
+                  ))}
               </div>
             ))}
-          </div>
 
-          <div className="chatbot-suggestions">
-            {suggestions.map((suggestion) => (
-              <button
-                key={suggestion}
-                type="button"
-                onClick={() => send(suggestion)}
-                className="chatbot-suggestion"
-              >
-                {suggestion}
-              </button>
-            ))}
+            {loading && (
+              <div className="chatbot-message-row bot">
+                <div className="chatbot-message bot">Lumi está escribiendo...</div>
+              </div>
+            )}
           </div>
 
           <div className="chatbot-input-container">
             <input
               value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  send("");
-                }
+              onChange={(event) => setInput(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") void send();
               }}
               placeholder="Escribí tu mensaje..."
               className="chatbot-input"
+              disabled={loading}
             />
 
             <button
               type="button"
-              onClick={() => send("")}
+              onClick={() => void send()}
               className="chatbot-send"
+              disabled={loading}
+              aria-label="Enviar mensaje"
             >
               →
             </button>
@@ -140,7 +230,7 @@ function Chatbot() {
 
       <button
         type="button"
-        onClick={() => setOpen((prev) => !prev)}
+        onClick={toggleChat}
         className="chatbot-toggle"
         aria-label={open ? "Cerrar chat" : "Abrir chat"}
       >
