@@ -5,6 +5,7 @@ import {
   fetchAppointments,
   completeAppointmentApi,
   cancelAppointmentApi,
+  fetchMyProfessionalProfile, 
 } from "../professionalApi";
 import AppointmentDetailModal from "./AppointmentDetailModal";
 import "./ProfessionalAgenda.css";
@@ -28,8 +29,7 @@ const statusClasses = {
 };
 
 const ProfessionalAgenda = () => {
-  const { token, user } = useAuth();
-
+  const { token } = useAuth();
   const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -46,8 +46,8 @@ const ProfessionalAgenda = () => {
       setLoading(true);
       setError("");
 
-      const professionalId = user?.professionalId || user?.id;
-      const data = await fetchAppointments(token, professionalId);
+      const professional = await fetchMyProfessionalProfile(token);
+      const data = await fetchAppointments(token, professional.id);
       setAppointments(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Error al cargar agenda:", err);
