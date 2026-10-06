@@ -203,8 +203,7 @@
 }
 
 
-/* Dentro del modal de creación no necesitamos
-   el fondo/borde que usa la sección de reprogramación */
+
 
 .admin-modal-body > .appointment-reschedule {
   padding: 0;
@@ -213,7 +212,6 @@
 }
 
 
-/* Separación entre los campos y los horarios */
 
 .admin-modal-body
   .appointment-reschedule
@@ -222,7 +220,6 @@
 }
 
 
-/* Resultado después de crear la reserva */
 
 .appointment-create-result {
   padding: 6px 0;
@@ -366,4 +363,84 @@
   border-color: #7bbf91;
   color: #287a45;
   transform: none;
+}
+
+/* Cobro en efectivo */
+
+.cash-payment-options {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.cash-payment-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #ddd8d0;
+  border-radius: 10px;
+  background: #fff;
+  cursor: pointer;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.cash-payment-option:hover {
+  border-color: #9daf9f;
+}
+
+.cash-payment-option.selected {
+  border-color: #789887;
+  background: #f3f7f4;
+}
+
+.cash-payment-option input[type="radio"] {
+  margin: 0;
+  flex-shrink: 0;
+  accent-color: #789887;
+}
+
+.cash-payment-option div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.cash-payment-option strong {
+  font-size: 14px;
+  font-weight: 600;
+  color: #333;
+}
+
+.cash-payment-option span {
+  font-size: 13px;
+  color: #747b83;
+}
+
+@media (max-width: 600px) {
+  .cash-payment-options {
+    grid-template-columns: 1fr;
+  }
+}
+
+.admin-modal-scroll
+  > .appointment-reschedule:has(.cash-payment-options)
+  h3 {
+  margin: 0 0 6px;
+  color: var(--foreground);
+  font-family: "DM Serif Display", serif;
+  font-size: 20px;
+  font-weight: 400;
+}
+
+.admin-modal-scroll
+  > .appointment-reschedule:has(.cash-payment-options)
+  > p {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 13px;
+  line-height: 1.5;
 }

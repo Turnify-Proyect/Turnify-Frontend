@@ -14,6 +14,7 @@ import {
   cancelAppointmentApi,
   updateAppointmentStatusApi,
   rescheduleAppointmentApi,
+  processCashPaymentApi,
 } from "./adminAppointmentsApi";
 
 
@@ -31,6 +32,11 @@ const AdminAppointments = () => {
 
   // Modal
   const [selectedAppointment, setSelectedAppointment] = useState(null);
+
+  // Cobro en efectivo
+  const [showCashPayment, setShowCashPayment] = useState(false);
+  const [cashPaymentType, setCashPaymentType] = useState("");
+  const [processingCashPayment, setProcessingCashPayment] = useState(false);
 
   // Reprogramación
   const [isRescheduling, setIsRescheduling] = useState(false);
@@ -208,6 +214,49 @@ const getAvailableSlots = async (date, professionalId, serviceId, appointmentId 
   }
 };
 
+
+// Confirmar cobro en efectivo
+const processCashPayment = async () => {
+  if (!cashPaymentType) {
+    toast.error("Seleccioná el tipo de cobro.");
+    return;
+  }
+
+  const orderId = selectedAppointment?.orderDetail?.order?.order_id;
+
+  if (!orderId) {
+    toast.error("No se pudo identificar la orden asociada a la reserva.");
+    return;
+  }
+
+  try {
+    setProcessingCashPayment(true);
+    setError("");
+
+    await processCashPaymentApi(
+      orderId,
+      cashPaymentType,
+      token
+    );
+
+    await getAppointments();
+
+    toast.success(
+      cashPaymentType === "deposit_payment"
+        ? "Seña registrada y reserva confirmada correctamente"
+        : "Pago total registrado y reserva confirmada correctamente"
+    );
+
+    closeAppointmentModal();
+  } catch (err) {
+    toast.error(
+      err.message || "No se pudo registrar el cobro en efectivo."
+    );
+  } finally {
+    setProcessingCashPayment(false);
+  }
+};
+
   // Cerrar modal
   const closeAppointmentModal = () => {
     setSelectedAppointment(null);
@@ -220,6 +269,10 @@ const getAvailableSlots = async (date, professionalId, serviceId, appointmentId 
 
     setRescheduleDate("");
     setRescheduleStartAt("");
+
+    setShowCashPayment(false);
+    setCashPaymentType("");
+    setProcessingCashPayment(false);
 
     setError("");
   };
@@ -713,6 +766,54 @@ const createAdminAppointment = async () => {
 
         </div>
 
+        {showCashPayment && (
+          <div className="appointment-reschedule">
+            <h3>Registrar cobro en efectivo</h3>
+
+            <p>Seleccioná el importe abonado por el cliente.</p>
+
+            <div className="cash-payment-options">
+              <label
+                className={`cash-payment-option ${
+                  cashPaymentType === "deposit_payment" ? "selected" : ""
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="cashPaymentType"
+                  value="deposit_payment"
+                  checked={cashPaymentType === "deposit_payment"}
+                  onChange={(e) => setCashPaymentType(e.target.value)}
+                />
+            
+                <div>
+                  <strong>Seña</strong>
+                  <span>30% del valor del servicio</span>
+                </div>
+              </label>
+              
+              <label
+                className={`cash-payment-option ${
+                  cashPaymentType === "full_payment" ? "selected" : ""
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="cashPaymentType"
+                  value="full_payment"
+                  checked={cashPaymentType === "full_payment"}
+                  onChange={(e) => setCashPaymentType(e.target.value)}
+                />
+            
+                <div>
+                  <strong>Valor total</strong>
+                  <span>100% del valor del servicio</span>
+                </div>
+              </label>
+            </div>
+          </div>
+        )}
+
         {isRescheduling && (
   <div className="appointment-reschedule">
     <h3>Reprogramar reserva</h3>
@@ -867,19 +968,40 @@ const createAdminAppointment = async () => {
 
         <div className="admin-modal-actions">
                 
-          {!isRescheduling ? (
+          {showCashPayment ? (
+            <>
+              <button
+                type="button"
+                className="admin-action-secondary"
+                disabled={processingCashPayment}
+                onClick={() => {
+                  setShowCashPayment(false);
+                  setCashPaymentType("");
+                }}
+              >
+                Volver
+              </button>
+              
+              <button
+                type="button"
+                className="admin-action-primary"
+                disabled={!cashPaymentType || processingCashPayment}
+                onClick={processCashPayment}
+              >
+                {processingCashPayment
+                  ? "Registrando..."
+                  : "Confirmar cobro"}
+              </button>
+            </>
+          ) : !isRescheduling ? (
             <>
               {selectedAppointment.status === "pending" && (
                 <button
                   type="button"
                   className="admin-action-primary"
-                  onClick={async () => {
-                    await updateAppointmentStatus(
-                      selectedAppointment.id,
-                      "confirmed"
-                    );
-                
-                    closeAppointmentModal();
+                  onClick={() => {
+                    setCashPaymentType("");
+                    setShowCashPayment(true);
                   }}
                 >
                   Confirmar reserva
