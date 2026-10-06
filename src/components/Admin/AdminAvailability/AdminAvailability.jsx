@@ -15,6 +15,7 @@ import {
   createProfessionalBlock,
   deleteProfessionalBlock,
 } from "./adminAvailabilityApi";
+import { fetchMyProfessionalProfile } from "../../Professional/professionalApi";
 
 import "./AdminAvailability.css";
 
@@ -30,7 +31,7 @@ const DAYS = [
   { value: "sunday", label: "Domingo" },
 ];
 
-const AdminAvailability = () => {
+const AdminAvailability = ({ professionalMode = false }) => {
   const { token } = useAuth();
   const [professionals, setProfessionals] = useState([]);
   const [selectedProfessionalId, setSelectedProfessionalId] = useState("");
@@ -80,8 +81,39 @@ const AdminAvailability = () => {
   };
 
   useEffect(() => {
-    getProfessionals();
-  }, [token]);
+  const initializeAvailability = async () => {
+    if (!token) return;
+
+    if (!professionalMode) {
+      await getProfessionals();
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError("");
+
+      const professional = await fetchMyProfessionalProfile(token);
+
+      setProfessionals([professional]);
+      setSelectedProfessionalId(professional.id);
+
+      await Promise.all([
+        getAvailability(professional.id),
+        getBlocks(professional.id),
+      ]);
+    } catch (err) {
+      setError(
+        err.message ||
+          "No se pudo obtener la información del profesional."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  initializeAvailability();
+}, [token, professionalMode]);
 
   // =========================
   // DISPONIBILIDAD

@@ -19,7 +19,7 @@ const ProfessionalDashboard = () => {
         return <ProfessionalServices />;
 
       case "availability":
-        return <AdminAvailability />;
+         return <AdminAvailability professionalMode />;
 
       default:
         return <ProfessionalAgenda />;

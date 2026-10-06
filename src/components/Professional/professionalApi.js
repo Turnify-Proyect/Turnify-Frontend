@@ -121,3 +121,22 @@ export const updateAppointmentStatusApi = async (id, status, token) => {
 
   return data;
 };
+
+// Obtener el perfil profesional asociado al usuario autenticado
+export const fetchMyProfessionalProfile = async (token) => {
+  const response = await fetch(`${API_URL}/professionals/me`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      getErrorMessage(data, "No se pudo obtener el perfil profesional.")
+    );
+  }
+
+  return data;
+};
