@@ -334,3 +334,34 @@ export const createAdminCheckoutSessionApi = async (
 
   return data;
 };
+
+export const processCashPaymentApi = async (
+  orderId,
+  paymentType,
+  token
+) => {
+  const response = await fetch(
+    `${import.meta.env.VITE_API_URL}/payments/cash`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        orderId,
+        paymentType,
+      }),
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      data.message || "No se pudo registrar el pago en efectivo."
+    );
+  }
+
+  return data;
+};

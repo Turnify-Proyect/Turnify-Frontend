@@ -22,29 +22,42 @@ const formatApiDate = (date) => {
 const getPeriodDates = (period) => {
   const today = new Date();
 
-  const to = new Date(
-    today.getFullYear(),
-    today.getMonth(),
-    today.getDate()
-  );
-
   let from;
+  let to;
 
   if (period === "7days") {
+    to = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate()
+    );
+
     from = new Date(to);
     from.setDate(from.getDate() - 6);
   }
 
   if (period === "30days") {
+    to = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate()
+    );
+
     from = new Date(to);
     from.setDate(from.getDate() - 29);
   }
 
   if (period === "month") {
     from = new Date(
-      to.getFullYear(),
-      to.getMonth(),
+      today.getFullYear(),
+      today.getMonth(),
       1
+    );
+
+    to = new Date(
+      today.getFullYear(),
+      today.getMonth() + 1,
+      0
     );
   }
 
@@ -362,38 +375,39 @@ const handleExportExcel = async () => {
   );
 
   summarySheet.addRows([
-    [
-      "Turnos totales",
-      summary.totalAppointments,
-    ],
-    [
-      "Servicios completados",
-      summary.completedAppointments,
-    ],
-    [
-      "Turnos cancelados",
-      summary.cancelledAppointments,
-    ],
-    [
-      "Tasa de cancelación",
-      summary.cancellationRate / 100,
-    ],
-    [
-      "Señas cobradas",
-      Number(summary.depositRevenue || 0),
-    ],
-    [
-      "Servicios realizados",
-      Number(
-        summary.completedServicesRevenue ||
-          0
-      ),
-    ],
-    [
-      "Ingresos calculados",
-      Number(summary.totalRevenue || 0),
-    ],
-  ]);
+  [
+    "Turnos totales",
+    summary.totalAppointments,
+  ],
+  [
+    "Servicios completados",
+    summary.completedAppointments,
+  ],
+  [
+    "Turnos cancelados",
+    summary.cancelledAppointments,
+  ],
+  [
+    "Tasa de cancelación",
+    summary.cancellationRate / 100,
+  ],
+  [
+    "Señas cobradas",
+    Number(summary.depositRevenue || 0),
+  ],
+  [
+    "Pagos totales anticipados",
+    Number(summary.fullPaymentRevenue || 0),
+  ],
+  [
+    "Saldos cobrados",
+    Number(summary.completionRevenue || 0),
+  ],
+  [
+    "Ingresos totales",
+    Number(summary.totalRevenue || 0),
+  ],
+]);
 
   summarySheet.columns = [
     {
@@ -409,7 +423,7 @@ const handleExportExcel = async () => {
     "0.00%";
 
   // Valores monetarios
-  ["B9", "B10", "B11"].forEach(
+  ["B9", "B10", "B11", "B12"].forEach(
     (cell) => {
       summarySheet.getCell(
         cell
@@ -874,45 +888,55 @@ const handleExportExcel = async () => {
               Ingresos calculados
             </p>
             <span className="admin-stat-note">
-              Incluye señas cobradas por Stripe y servicios completados, sin duplicar importes.
+              Total efectivamente cobrado durante el período seleccionado.
             </span>
           </div>
         </div>
       </div>
 
       <div className="admin-stats-grid">
-        <div className="admin-stat-card">
-          <div>
-            <span className="admin-stat-value">
-              {formatMoney(
-                summary.depositRevenue
-              )}
-            </span>
+          <div className="admin-stat-card">
+            <div>
+              <span className="admin-stat-value">
+                {formatMoney(summary.depositRevenue)}
+              </span>
 
-            <p>Señas cobradas</p>
-            <span className="admin-stat-note">
-              Se consideran únicamente pagos registrados mediante Stripe.
-            </span>
+              <p>Señas cobradas</p>
+
+              <span className="admin-stat-note">
+                Incluye señas abonadas online y en efectivo.
+              </span>
+            </div>
+          </div>
+
+          <div className="admin-stat-card">
+            <div>
+              <span className="admin-stat-value">
+                {formatMoney(summary.fullPaymentRevenue)}
+              </span>
+
+              <p>Pagos totales anticipados</p>
+
+              <span className="admin-stat-note">
+                Servicios abonados en su totalidad al confirmar la reserva.
+              </span>
+            </div>
+          </div>
+
+          <div className="admin-stat-card">
+            <div>
+              <span className="admin-stat-value">
+                {formatMoney(summary.completionRevenue)}
+              </span>
+
+              <p>Saldos cobrados</p>
+
+              <span className="admin-stat-note">
+                Importes restantes cobrados al completar los servicios.
+              </span>
+            </div>
           </div>
         </div>
-
-        <div className="admin-stat-card">
-          <div>
-            <span className="admin-stat-value">
-              {formatMoney(
-                summary.completedServicesRevenue
-              )}
-            </span>
-
-            <p>
-              Servicios realizados
-            </p>
-            <span className="admin-stat-note">
-              Se considera el valor total de los turnos marcados como completados.
-            </span>
-          </div>
-        </div>
-      </div>
 
        </>
         )}
