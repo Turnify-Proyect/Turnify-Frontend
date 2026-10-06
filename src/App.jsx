@@ -11,6 +11,7 @@ import ServiceDetail from "./Views/Services/ServiceDetail";
 import About from "./Views/About/About";
 import Contact from "./Views/Contact/Contact";
 import AdminDashboard from "./Views/Admin/AdminDashboard";
+import ProfessionalDashboard from "./Views/Professional/ProfessionalDashboard";
 import VerifyEmail from "./Views/VerifyEmail/VerifyEmail";
 import Checkout from "./Views/Checkout/Checkout";
 import PaymentSuccess from "./Views/Payment/PaymentSuccess";
@@ -104,6 +105,15 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={["admin"]}>
               <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/professional"
+          element={
+            <ProtectedRoute allowedRoles={["professional", "admin"]}>
+              <ProfessionalDashboard />
             </ProtectedRoute>
           }
         />
