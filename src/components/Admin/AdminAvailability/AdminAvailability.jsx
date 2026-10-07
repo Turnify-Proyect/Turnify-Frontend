@@ -720,8 +720,9 @@ const removeBlock = async (id) => {
         <h1>Disponibilidad</h1>
 
         <p>
-          Configurá los días y horarios de atención de cada
-          profesional.
+          {professionalMode
+            ? "Configurá tus días y horarios de atención y administrá tus licencias."
+            : "Configurá los días y horarios de atención de cada profesional."}
         </p>
       </div>
 
@@ -729,6 +730,7 @@ const removeBlock = async (id) => {
           <p className="admin-error">{error}</p>
         )}
 
+    {!professionalMode && (
       <div className="admin-filters availability-toolbar">
         <div className="availability-professional-select">
           <label htmlFor="availabilityProfessional">
@@ -758,6 +760,7 @@ const removeBlock = async (id) => {
         </div>
 
       </div>
+    )}
 
       {showUnsavedWarning && (
         <div className="availability-unsaved-warning">
@@ -989,87 +992,79 @@ const removeBlock = async (id) => {
                     
                       return (
                         <div
-                          className="availability-slot-row"
-                          key={slotKey}
-                        >
-                          <div className="availability-time-field">
-                            <span>Desde</span>
-                      
-                            <input
-                              type="time"
-                              value={
-                                item.startTime?.slice(
-                                  0,
-                                  5
-                                ) || ""
-                              }
-                              onChange={(e) =>
-                                handleSlotChange(
-                                  slotKey,
-                                  "startTime",
-                                  e.target.value
-                                )
-                              }
-                              disabled={isSaving}
-                            />
-                          </div>
-                            
-                          <span className="availability-time-separator">
-                            —
-                          </span>
-                            
-                          <div className="availability-time-field">
-                            <span>Hasta</span>
-                            
-                            <input
-                              type="time"
-                              value={
-                                item.endTime?.slice(
-                                  0,
-                                  5
-                                ) || ""
-                              }
-                              onChange={(e) =>
-                                handleSlotChange(
-                                  slotKey,
-                                  "endTime",
-                                  e.target.value
-                                )
-                              }
-                              disabled={isSaving}
-                            />
-                          </div>
-                            
-                          <div className="availability-slot-actions">
+                        className="availability-slot-row"
+                        key={slotKey}
+                      >
+                        <div className="availability-time-field">
+                          <span>Desde</span>
+                                            
+                          <input
+                            type="time"
+                            value={item.startTime?.slice(0, 5) || ""}
+                            onChange={(e) =>
+                              handleSlotChange(
+                                slotKey,
+                                "startTime",
+                                e.target.value
+                              )
+                            }
+                            disabled={isSaving || !item.isNew}
+                          />
+                        </div>
+                          
+                        <span className="availability-time-separator">
+                          —
+                        </span>
+                          
+                        <div className="availability-time-field">
+                          <span>Hasta</span>
+                          
+                          <input
+                            type="time"
+                            value={item.endTime?.slice(0, 5) || ""}
+                            onChange={(e) =>
+                              handleSlotChange(
+                                slotKey,
+                                "endTime",
+                                e.target.value
+                              )
+                            }
+                            disabled={isSaving || !item.isNew}
+                          />
+                        </div>
+                          
+                        <div className="availability-slot-actions">
+                          {item.isNew && (
                             <button
                               type="button"
                               className="availability-save-button"
                               onClick={() =>
-                                saveAvailabilitySlot(
-                                  item
-                                )
+                                saveAvailabilitySlot(item)
                               }
                               disabled={isSaving}
                               title="Guardar horario"
                             >
                               {isSaving ? "..." : "✓"}
                             </button>
-                            
-                            <button
-                              type="button"
-                              className="availability-delete-button"
-                              onClick={() =>
-                                removeAvailabilitySlot(
-                                  item
-                                )
-                              }
-                              disabled={isSaving}
-                              title="Eliminar horario"
-                            >
-                              ×
-                            </button>
-                          </div>
+                          )}
+                      
+                          <button
+                            type="button"
+                            className="availability-delete-button"
+                            onClick={() =>
+                              removeAvailabilitySlot(item)
+                            }
+                            disabled={isSaving}
+                            title={
+                              item.isNew
+                                ? "Descartar horario"
+                                : "Eliminar horario"
+                            }
+                          >
+                            ×
+                          </button>
                         </div>
+                      </div>
                       );
                     })}
           </div>

@@ -1,50 +1,38 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../../../context/AuthContext";
-import {
-  fetchProfessionalServices,
-  fetchAllActiveServices,
-} from "../professionalApi";
+import {fetchProfessionalServices,fetchMyProfessionalProfile,} from "../professionalApi";
 import "./ProfessionalServices.css";
 
 const ProfessionalServices = () => {
-  const { user } = useAuth();
+  const { token } = useAuth();
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
 
   const getServices = async () => {
-    try {
-      setLoading(true);
-      setError("");
+  try {
+    setLoading(true);
+    setError("");
 
-      const professionalId = user?.professionalId || user?.id;
-      let data = [];
+    const professional = await fetchMyProfessionalProfile(token);
 
-      try {
-        if (professionalId) {
-          data = await fetchProfessionalServices(professionalId);
-        }
-      } catch (err) {
-        console.warn("Falling back to all active services:", err);
-      }
+    const data = await fetchProfessionalServices(professional.id);
 
-      if (!data || data.length === 0) {
-        data = await fetchAllActiveServices();
-      }
-
-      setServices(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error("Error al obtener servicios:", err);
-      setError("No se pudieron cargar los servicios asignados.");
-    } finally {
-      setLoading(false);
-    }
-  };
+    setServices(Array.isArray(data) ? data : []);
+  } catch (err) {
+    console.error("Error al obtener servicios:", err);
+    setError("No se pudieron cargar los servicios asignados.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   useEffect(() => {
+    if (!token) return;
+    
     getServices();
-  }, []);
+  }, [token]);
 
   const filteredServices = services.filter((srv) => {
     const term = search.toLowerCase().trim();
