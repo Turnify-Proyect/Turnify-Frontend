@@ -1,175 +1,365 @@
+/* =========================
+   OVERLAY
+========================= */
+
 .appointment-modal-overlay {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(15, 23, 42, 0.75);
-  backdrop-filter: blur(4px);
+  inset: 0;
+
   display: flex;
   align-items: center;
   justify-content: center;
+
+  padding: 24px;
+
+  background: rgba(15, 23, 42, 0.42);
+  backdrop-filter: blur(2px);
+
   z-index: 1000;
-  padding: 20px;
 }
+
+
+/* =========================
+   MODAL
+========================= */
 
 .appointment-modal-content {
-  background: #1e293b;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 16px;
   width: 100%;
-  max-width: 540px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  max-width: 620px;
+  max-height: calc(100vh - 48px);
+
+  display: flex;
+  flex-direction: column;
+
+  background: var(--card);
+
+  border: 1px solid var(--border);
+  border-radius: 16px;
+
+  box-shadow:
+    0 20px 50px rgba(15, 23, 42, 0.14),
+    0 4px 12px rgba(15, 23, 42, 0.06);
+
+  color: var(--foreground);
+
   overflow: hidden;
-  color: #f8fafc;
-  animation: modalFadeIn 0.2s ease-out;
+
+  animation: appointmentModalIn 0.18s ease-out;
 }
 
-@keyframes modalFadeIn {
+@keyframes appointmentModalIn {
   from {
     opacity: 0;
-    transform: scale(0.95);
+    transform: translateY(8px) scale(0.98);
   }
+
   to {
     opacity: 1;
-    transform: scale(1);
+    transform: translateY(0) scale(1);
   }
 }
 
+
+/* =========================
+   HEADER
+========================= */
+
 .appointment-modal-header {
-  padding: 20px 24px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
   align-items: center;
   justify-content: space-between;
+
+  gap: 20px;
+
+  padding: 20px 24px;
+
+  border-bottom: 1px solid var(--border);
+
+  background: var(--card);
 }
 
 .appointment-modal-header h2 {
   margin: 0;
-  font-size: 1.25rem;
-  font-weight: 600;
-  color: #f8fafc;
+
+  color: var(--foreground);
+
+  font-family: "DM Serif Display", serif;
+  font-size: 22px;
+  font-weight: 400;
 }
 
 .appointment-modal-close {
-  background: transparent;
+  width: 34px;
+  height: 34px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0;
+
   border: none;
-  color: #94a3b8;
-  font-size: 1.2rem;
+  border-radius: 8px;
+
+  background: transparent;
+  color: var(--muted-foreground);
+
+  font-family: inherit;
+  font-size: 17px;
+
   cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 6px;
-  transition: all 0.2s ease;
+
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
 }
 
 .appointment-modal-close:hover {
-  background: rgba(255, 255, 255, 0.1);
-  color: #f8fafc;
+  background: var(--secondary);
+  color: var(--foreground);
 }
 
+
+/* =========================
+   BODY
+========================= */
+
 .appointment-modal-body {
-  padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
+
+  padding: 24px;
+
+  overflow-y: auto;
 }
+
+
+/* =========================
+   ESTADO
+========================= */
 
 .appointment-modal-status-row {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  gap: 10px;
+
+  padding-bottom: 18px;
+
+  border-bottom: 1px solid var(--border);
 }
 
 .appointment-modal-label {
-  font-size: 0.9rem;
-  color: #94a3b8;
+  color: var(--muted-foreground);
+
+  font-size: 13px;
+  font-weight: 500;
+}
+
+
+/* =========================
+   SECCIONES
+========================= */
+
+.appointment-detail-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .appointment-detail-section h3 {
-  margin: 0 0 12px 0;
-  font-size: 0.95rem;
+  margin: 0;
+
+  color: var(--foreground);
+
+  font-size: 13px;
+  font-weight: 700;
+
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #38bdf8;
-  font-weight: 600;
+  letter-spacing: 0.04em;
 }
+
+
+/* =========================
+   DATOS
+========================= */
 
 .detail-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px 16px;
-  background: rgba(15, 23, 42, 0.4);
-  padding: 16px;
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+
+  gap: 18px 24px;
+
+  padding: 18px;
+
+  border: 1px solid var(--border);
+  border-radius: 12px;
+
+  background: var(--background);
+}
+
+.detail-grid > div {
+  min-width: 0;
 }
 
 .detail-label {
   display: block;
-  font-size: 0.8rem;
-  color: #94a3b8;
-  margin-bottom: 2px;
+
+  margin-bottom: 4px;
+
+  color: var(--muted-foreground);
+
+  font-size: 12px;
+  font-weight: 500;
 }
 
 .detail-value {
   margin: 0;
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: #f8fafc;
-  word-break: break-word;
+
+  color: var(--foreground);
+
+  font-size: 14px;
+  font-weight: 600;
+
+  line-height: 1.4;
+
+  overflow-wrap: anywhere;
 }
 
 .text-accent {
-  color: #4ade80;
-  font-weight: 600;
+  color: var(--primary);
+  font-weight: 700;
 }
+
+
+/* =========================
+   FOOTER
+========================= */
 
 .appointment-modal-footer {
-  padding: 16px 24px;
-  background: rgba(15, 23, 42, 0.3);
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
-  gap: 12px;
+  align-items: center;
   justify-content: flex-end;
+
+  gap: 10px;
   flex-wrap: wrap;
+
+  padding: 16px 24px;
+
+  border-top: 1px solid var(--border);
+
+  background: var(--background);
 }
+
+
+/* =========================
+   BOTONES
+========================= */
 
 .btn-action {
-  padding: 8px 16px;
-  border-radius: 8px;
-  font-size: 0.85rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 38px;
+
+  padding: 9px 15px;
+
+  border: 1px solid transparent;
+  border-radius: 9px;
+
+  font-family: inherit;
+  font-size: 13px;
   font-weight: 600;
+
   cursor: pointer;
-  border: none;
-  transition: all 0.2s ease;
+
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.15s ease;
 }
 
+.btn-action:hover {
+  transform: translateY(-1px);
+}
+
+
+/* Completar */
+
 .btn-complete {
-  background: #16a34a;
-  color: #ffffff;
+  border-color: #7bbf91;
+  background: #eaf7ee;
+  color: #287a45;
 }
 
 .btn-complete:hover {
-  background: #15803d;
+  border-color: #5ba977;
+  background: #dff2e5;
 }
 
+
+/* Cancelar */
+
 .btn-cancel {
-  background: #dc2626;
-  color: #ffffff;
+  border-color: #efaaaa;
+  background: #fff0f0;
+  color: #b42318;
 }
 
 .btn-cancel:hover {
-  background: #b91c1c;
+  border-color: #e58b8b;
+  background: #ffe5e5;
 }
 
+
+/* Cerrar */
+
 .btn-close-secondary {
-  background: rgba(255, 255, 255, 0.1);
-  color: #cbd5e1;
+  border-color: var(--border);
+
+  background: var(--card);
+  color: var(--foreground);
 }
 
 .btn-close-secondary:hover {
-  background: rgba(255, 255, 255, 0.2);
-  color: #ffffff;
+  border-color: var(--primary);
+
+  background: var(--secondary);
+  color: var(--primary);
+}
+
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (max-width: 600px) {
+  .appointment-modal-overlay {
+    padding: 12px;
+  }
+
+  .appointment-modal-content {
+    max-height: calc(100vh - 24px);
+  }
+
+  .appointment-modal-header,
+  .appointment-modal-body,
+  .appointment-modal-footer {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .appointment-modal-footer {
+    flex-direction: column;
+  }
+
+  .appointment-modal-footer .btn-action {
+    width: 100%;
+  }
 }

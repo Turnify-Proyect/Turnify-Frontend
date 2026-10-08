@@ -4,11 +4,16 @@ import { toast } from "react-toastify";
 import {
   fetchAppointments,
   completeAppointmentApi,
-  cancelAppointmentApi,
-  fetchMyProfessionalProfile, 
+  markNoShowAppointmentApi,
+  fetchMyProfessionalProfile,
 } from "../professionalApi";
 import AppointmentDetailModal from "./AppointmentDetailModal";
 import "./ProfessionalAgenda.css";
+import {
+  formatArgentinaDate,
+  formatArgentinaTime,
+  formatArgentinaDateKey,
+} from "../../../helpers/formatLocalDate";
 
 const statusLabels = {
   pending: "Pendiente",
@@ -57,6 +62,12 @@ const ProfessionalAgenda = () => {
     }
   };
 
+  const handleRefresh = async () => {
+    await getAppointments();
+
+    toast.success("Agenda actualizada.");
+  };
+
   useEffect(() => {
     getAppointments();
   }, [token]);
@@ -74,52 +85,84 @@ const ProfessionalAgenda = () => {
     }
   };
 
-  const handleCancel = async (appointmentId) => {
+  const handleNoShow = async (appointmentId) => {
     try {
-      await cancelAppointmentApi(appointmentId, token);
-      toast.info("Turno marcado como ausente / cancelado.");
-      if (selectedAppointment?.id === appointmentId) {
+      await markNoShowAppointmentApi(
+        appointmentId,
+        token
+      );
+
+      toast.info(
+        "Turno marcado como ausente."
+      );
+
+      if (
+        selectedAppointment?.id ===
+        appointmentId
+      ) {
         setSelectedAppointment(null);
       }
+
       await getAppointments();
     } catch (err) {
-      toast.error(err.message || "Error al cancelar el turno.");
+      toast.error(
+        err.message ||
+          "Error al marcar el turno como ausente."
+      );
     }
   };
 
-  const todayStr = new Date().toISOString().split("T")[0];
+  //Filtros
+  const todayStr = formatArgentinaDateKey(new Date());
 
   const filteredAppointments = appointments.filter((app) => {
-    const clientName = (app.user?.name || app.client?.name || "").toLowerCase();
-    const serviceName = (app.service?.name || "").toLowerCase();
-    const searchValue = search.toLowerCase().trim();
+  const clientName = (app.user?.name || app.client?.name || "" ).toLowerCase();
 
-    const matchesSearch =
-      clientName.includes(searchValue) || serviceName.includes(searchValue);
+  const serviceName = ( app.service?.name || "" ).toLowerCase();
 
-    const appStatus = (app.status || "").toLowerCase();
+  const searchValue = search.toLowerCase().trim();
+
+  const matchesSearch = clientName.includes(searchValue) || serviceName.includes(searchValue);
+
+  const appStatus =
+      (app.status || "").toLowerCase();
+
     const matchesStatus =
       statusFilter === "all" ||
-      (statusFilter === "pending" && (appStatus === "pending" || appStatus === "confirmed")) ||
-      (statusFilter === "completed" && appStatus === "completed") ||
-      (statusFilter === "cancelled" && (appStatus === "cancelled" || appStatus === "no_show"));
+      (statusFilter === "pending" &&
+        (
+          appStatus === "pending" ||
+          appStatus === "confirmed"
+        )) ||
+      (statusFilter === "completed" &&
+        appStatus === "completed") ||
+      (statusFilter === "cancelled" &&
+        (
+          appStatus === "cancelled" ||
+          appStatus === "no_show"
+        ));
 
-    const appDate = app.date || app.appointmentDate || "";
+    const appDate =
+      formatArgentinaDateKey(app.startAt);
+
     let matchesDate = true;
 
     if (customDate) {
-      matchesDate = appDate === customDate;
+      matchesDate =
+        appDate === customDate;
     } else if (dateFilter === "today") {
-      matchesDate = appDate === todayStr;
+      matchesDate =
+        appDate === todayStr;
     } else if (dateFilter === "upcoming") {
-      matchesDate = appDate >= todayStr;
+      matchesDate =
+        appDate > todayStr;
     }
 
-    return matchesSearch && matchesStatus && matchesDate;
+    return (matchesSearch && matchesStatus && matchesDate);
   });
 
   return (
-    <div className="admin-page">
+    <div className="admin-page professional-agenda">
       <div className="admin-page-header">
         <h1>Mi Agenda de Turnos</h1>
         <p>Consultá y gestioná las citas y turnos que tenés asignados.</p>
@@ -173,7 +216,7 @@ const ProfessionalAgenda = () => {
           <option value="cancelled">Ausentes / Cancelados</option>
         </select>
 
-        <button type="button" className="btn-refresh" onClick={getAppointments} title="Actualizar agenda">
+        <button type="button" className="btn-refresh" onClick={handleRefresh} title="Actualizar agenda">
           ↻
         </button>
       </div>
@@ -204,8 +247,8 @@ const ProfessionalAgenda = () => {
                 const clientName = app.user?.name || app.client?.name || "Cliente";
                 const serviceName = app.service?.name || "Servicio";
                 const duration = app.service?.durationMinutes ? `${app.service.durationMinutes} min` : "-";
-                const dateStr = app.date || app.appointmentDate || "-";
-                const timeStr = app.time || app.startTime || app.startAt || "-";
+                const dateStr = formatArgentinaDate(app.startAt);
+                const timeStr = formatArgentinaTime(app.startAt);
                 const appStatus = (app.status || "pending").toLowerCase();
 
                 return (
@@ -252,7 +295,7 @@ const ProfessionalAgenda = () => {
                           <button
                             type="button"
                             className="action-btn action-cancel"
-                            onClick={() => handleCancel(app.id)}
+                            onClick={() => handleNoShow(app.id)}
                             title="Marcar como ausente / cancelar"
                           >
                             ✕
@@ -273,7 +316,7 @@ const ProfessionalAgenda = () => {
           appointment={selectedAppointment}
           onClose={() => setSelectedAppointment(null)}
           onComplete={handleComplete}
-          onCancel={handleCancel}
+          onNoShow={handleNoShow}
         />
       )}
     </div>

@@ -1,5 +1,6 @@
 import React from "react";
 import "./AppointmentDetailModal.css";
+import {formatArgentinaDate, formatArgentinaTime, } from "../../../helpers/formatLocalDate";
 
 const statusLabels = {
   pending: "Pendiente",
@@ -19,7 +20,7 @@ const statusClasses = {
   expired: "status-badge status-expired",
 };
 
-const AppointmentDetailModal = ({ appointment, onClose, onComplete, onCancel }) => {
+const AppointmentDetailModal = ({ appointment, onClose, onComplete, onNoShow }) => {
   if (!appointment) return null;
 
   const clientName = appointment.user?.name || appointment.client?.name || "Cliente Sin Nombre";
@@ -30,10 +31,11 @@ const AppointmentDetailModal = ({ appointment, onClose, onComplete, onCancel }) 
   const servicePrice = appointment.service?.price ? `$${Number(appointment.service.price).toLocaleString("es-AR")}` : "-";
   const serviceDuration = appointment.service?.durationMinutes ? `${appointment.service.durationMinutes} min` : "-";
 
-  const appointmentDate = appointment.date || appointment.appointmentDate || "-";
-  const appointmentTime = appointment.time || appointment.startTime || appointment.startAt || "-";
+  const appointmentDate = formatArgentinaDate(appointment.startAt);
+  const appointmentTime = formatArgentinaTime(appointment.startAt);
 
   const currentStatus = appointment.status?.toLowerCase() || "pending";
+
 
   return (
     <div className="appointment-modal-overlay" onClick={onClose}>
@@ -113,9 +115,9 @@ const AppointmentDetailModal = ({ appointment, onClose, onComplete, onCancel }) 
             <button
               type="button"
               className="btn-action btn-cancel"
-              onClick={() => onCancel(appointment.id)}
+              onClick={() => onNoShow(appointment.id)}
             >
-              ✕ Marcar Ausente / Cancelar
+              ✕ Marcar Ausente
             </button>
           )}
 

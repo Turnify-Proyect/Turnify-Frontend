@@ -1,109 +1,356 @@
-.table-datetime {
-  display: flex;
-  flex-direction: column;
+/* =========================
+   AGENDA PROFESIONAL
+========================= */
+
+.professional-agenda {
+  width: 100%;
 }
 
-.datetime-date {
-  font-weight: 600;
-  color: #f8fafc;
+
+/* =========================
+   FILTROS
+========================= */
+
+.professional-agenda .admin-filters {
+  margin-bottom: 24px;
 }
 
-.datetime-time {
-  font-size: 0.8rem;
-  color: #38bdf8;
-}
+.professional-agenda .btn-refresh {
+  min-width: 44px;
+  height: 44px;
 
-.table-client-name {
-  font-weight: 500;
-  color: #f8fafc;
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 60px 20px;
-  background: rgba(30, 41, 59, 0.4);
-  border: 1px dashed rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  text-align: center;
-  color: #94a3b8;
-}
 
-.empty-icon {
-  font-size: 2.5rem;
-  margin-bottom: 12px;
-}
+  padding: 0;
 
-.empty-state h3 {
-  margin: 0 0 6px 0;
-  color: #f8fafc;
-}
+  border: 1px solid var(--border);
+  border-radius: 10px;
 
-.loading-text {
-  padding: 40px;
-  text-align: center;
-  color: #94a3b8;
-}
+  background: var(--card);
+  color: var(--muted-foreground);
 
-.btn-refresh {
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  color: #f8fafc;
-  padding: 8px 14px;
-  border-radius: 8px;
+  font-family: inherit;
+  font-size: 18px;
+
   cursor: pointer;
-  font-size: 1.1rem;
-  transition: all 0.2s ease;
+
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
 }
 
-.btn-refresh:hover {
-  background: rgba(255, 255, 255, 0.15);
+.professional-agenda .btn-refresh:hover {
+  background: var(--secondary);
+  border-color: var(--primary);
+  color: var(--primary);
 }
 
-.table-actions {
+
+/* =========================
+   CONTENEDOR TABLA
+========================= */
+
+.professional-agenda .admin-table-container {
+  width: 100%;
+
+  overflow-x: auto;
+
+  background: var(--card);
+
+  border: 1px solid var(--border);
+  border-radius: 14px;
+
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.03);
+}
+
+
+/* =========================
+   TABLA
+========================= */
+
+.professional-agenda .admin-table {
+  width: 100%;
+
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+.professional-agenda .admin-table th {
+  padding: 14px 20px;
+
+  background: var(--background);
+
+  color: var(--muted-foreground);
+
+  text-align: left;
+
+  font-size: 11px;
+  font-weight: 700;
+
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+
+  white-space: nowrap;
+}
+
+.professional-agenda .admin-table td {
+  padding: 18px 20px;
+
+  border-top: 1px solid var(--border);
+
+  color: var(--muted-foreground);
+
+  font-size: 14px;
+
+  vertical-align: middle;
+}
+
+.professional-agenda .admin-table tbody tr {
+  transition: background-color 0.2s ease;
+}
+
+.professional-agenda .admin-table tbody tr:hover {
+  background: var(--background);
+}
+
+
+/* =========================
+   FECHA / HORA
+========================= */
+
+.professional-agenda .table-datetime {
   display: flex;
-  gap: 8px;
-  align-items: center;
+  flex-direction: column;
+
+  align-items: flex-start;
+
+  gap: 3px;
+
+  min-width: 105px;
 }
 
-.action-btn {
-  padding: 6px 10px;
-  border-radius: 6px;
-  border: none;
-  font-size: 0.8rem;
+.professional-agenda .datetime-date {
+  margin: 0;
+
+  color: var(--foreground);
+
+  font-size: 14px;
   font-weight: 600;
+
+  line-height: 1.3;
+}
+
+.professional-agenda .datetime-time {
+  margin: 0;
+
+  color: var(--muted-foreground);
+
+  font-size: 12px;
+  font-weight: 500;
+
+  line-height: 1.3;
+}
+
+
+/* =========================
+   CLIENTE
+========================= */
+
+.professional-agenda .table-client-name {
+  color: var(--foreground);
+
+  font-size: 14px;
+  font-weight: 600;
+}
+
+
+/* Servicio y duración */
+
+.professional-agenda .admin-table td:nth-child(3),
+.professional-agenda .admin-table td:nth-child(4) {
+  color: var(--muted-foreground);
+}
+
+
+/* =========================
+   ACCIONES
+========================= */
+
+.professional-agenda .table-actions {
+  display: flex;
+
+  align-items: center;
+
+  gap: 8px;
+
+  white-space: nowrap;
+}
+
+.professional-agenda .action-btn {
+  height: 36px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0 12px;
+
+  border-radius: 8px;
+
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+
   cursor: pointer;
-  transition: all 0.2s ease;
+
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.15s ease;
 }
 
-.action-view {
-  background: rgba(56, 189, 248, 0.15);
-  color: #38bdf8;
-  border: 1px solid rgba(56, 189, 248, 0.3);
+.professional-agenda .action-btn:hover {
+  transform: translateY(-1px);
 }
 
-.action-view:hover {
-  background: rgba(56, 189, 248, 0.3);
+
+/* Detalle */
+
+.professional-agenda .action-view {
+  border: 1px solid var(--border);
+
+  background: var(--card);
+  color: var(--primary);
 }
 
-.action-complete {
-  background: rgba(34, 197, 94, 0.15);
-  color: #4ade80;
-  border: 1px solid rgba(34, 197, 94, 0.3);
+.professional-agenda .action-view:hover {
+  border-color: var(--primary);
+  background: var(--secondary);
 }
 
-.action-complete:hover {
-  background: rgba(34, 197, 94, 0.3);
+
+/* Completar */
+
+.professional-agenda .action-complete {
+  min-width: 36px;
+
+  padding: 0 10px;
+
+  border: 1px solid #a9d9b8;
+
+  background: #edf8f0;
+  color: #287a45;
 }
 
-.action-cancel {
-  background: rgba(239, 68, 68, 0.15);
-  color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.3);
+.professional-agenda .action-complete:hover {
+  border-color: #7bbf91;
+  background: #e3f4e8;
 }
 
-.action-cancel:hover {
-  background: rgba(239, 68, 68, 0.3);
+
+/* Cancelar */
+
+.professional-agenda .action-cancel {
+  min-width: 36px;
+
+  padding: 0 10px;
+
+  border: 1px solid #f2b6b6;
+
+  background: #fff3f3;
+  color: #b42318;
+}
+
+.professional-agenda .action-cancel:hover {
+  border-color: #e89595;
+  background: #ffeaea;
+}
+
+
+/* =========================
+   ESTADO VACÍO
+========================= */
+
+.professional-agenda .empty-state {
+  display: flex;
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  min-height: 260px;
+
+  padding: 48px 24px;
+
+  background: var(--card);
+
+  border: 1px dashed var(--border);
+  border-radius: 14px;
+
+  text-align: center;
+}
+
+.professional-agenda .empty-icon {
+  margin-bottom: 12px;
+
+  font-size: 32px;
+}
+
+.professional-agenda .empty-state h3 {
+  margin: 0 0 6px;
+
+  color: var(--foreground);
+
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.professional-agenda .empty-state p {
+  margin: 0;
+
+  color: var(--muted-foreground);
+
+  font-size: 13px;
+}
+
+
+/* =========================
+   CARGANDO
+========================= */
+
+.professional-agenda .loading-text {
+  padding: 48px 20px;
+
+  color: var(--muted-foreground);
+
+  text-align: center;
+
+  font-size: 14px;
+}
+
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (max-width: 900px) {
+  .professional-agenda .admin-table th,
+  .professional-agenda .admin-table td {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+}
+
+@media (max-width: 700px) {
+  .professional-agenda .admin-table-container {
+    border-radius: 12px;
+  }
+
+  .professional-agenda .table-actions {
+    min-width: 150px;
+  }
 }
