@@ -379,9 +379,9 @@ export default function Login() {
 
                   {error && <p className="loginError">{error}</p>}
 
-                  <a href="#forgot" className="forgotLink">
+                  <Link to="/forgot-password" className="forgotLink">
                     ¿Olvidaste tu contraseña?
-                  </a>
+                  </Link>
 
                   <button type="submit" className="submitButton" disabled={loading}>
                     {loading ? "Ingresando..." : "Iniciar Sesión"}
