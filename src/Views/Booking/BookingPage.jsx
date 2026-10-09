@@ -245,7 +245,7 @@ const deposit =
 
   function handleBack() {
     if (step === 1) {
-      navigate("/services");
+      navigate("/dashboard");
       return;
     }
 
