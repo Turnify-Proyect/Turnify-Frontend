@@ -140,9 +140,11 @@ export const deleteAvailabilityApi = async (
     }
   );
 
-  const data = await response.json();
-
   if (!response.ok) {
+    const data = await response
+      .json()
+      .catch(() => null);
+
     throw new Error(
       getErrorMessage(
         data,
@@ -151,5 +153,93 @@ export const deleteAvailabilityApi = async (
     );
   }
 
+  return true;
+};
+
+export const fetchProfessionalBlocks = async (
+  professionalId,
+  token
+) => {
+  const response = await fetch(
+    `${API_URL}/availability/blocks/professional/${professionalId}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      getErrorMessage(
+        data,
+        "No se pudieron obtener los bloqueos."
+      )
+    );
+  }
+
   return data;
+};
+
+export const createProfessionalBlock = async (
+  professionalId,
+  blockData,
+  token
+) => {
+  const response = await fetch(
+    `${API_URL}/availability/blocks/professional/${professionalId}`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(blockData),
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      getErrorMessage(
+        data,
+        "No se pudo crear el bloqueo."
+      )
+    );
+  }
+
+  return data;
+};
+
+export const deleteProfessionalBlock = async (
+  id,
+  token
+) => {
+  const response = await fetch(
+    `${API_URL}/availability/blocks/${id}`,
+    {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  if (!response.ok) {
+    const data = await response
+      .json()
+      .catch(() => null);
+
+    throw new Error(
+      getErrorMessage(
+        data,
+        "No se pudo eliminar el bloqueo."
+      )
+    );
+  }
+
+  return true;
 };

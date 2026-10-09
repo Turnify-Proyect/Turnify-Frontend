@@ -11,17 +11,32 @@ import ServiceDetail from "./Views/Services/ServiceDetail";
 import About from "./Views/About/About";
 import Contact from "./Views/Contact/Contact";
 import AdminDashboard from "./Views/Admin/AdminDashboard";
+import ProfessionalDashboard from "./Views/Professional/ProfessionalDashboard";
 import VerifyEmail from "./Views/VerifyEmail/VerifyEmail";
 import Checkout from "./Views/Checkout/Checkout";
 import PaymentSuccess from "./Views/Payment/PaymentSuccess";
 import PaymentFailure from "./Views/Payment/PaymentFailure";
 import PaymentPending from "./Views/Payment/PaymentPending";
 
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import "./App.css";
 
 function App() {
   return (
     <>
+      <ToastContainer
+        position="top-right"
+        autoClose={3500}
+        hideProgressBar={false}
+        newestOnTop={true}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+      />
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/about" element={<About />} />
@@ -90,6 +105,15 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={["admin"]}>
               <AdminDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/professional"
+          element={
+            <ProtectedRoute allowedRoles={["professional", "admin"]}>
+              <ProfessionalDashboard />
             </ProtectedRoute>
           }
         />

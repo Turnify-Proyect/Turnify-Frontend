@@ -81,7 +81,7 @@ const ServiceDetail = () => {
 
           <div className="service-detail-content">
             <span className="service-detail-category">
-              {service.category}
+              {service.category?.name || "-"}
             </span>
 
             <h1>{service.name}</h1>

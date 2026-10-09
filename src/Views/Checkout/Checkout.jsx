@@ -66,13 +66,11 @@ function CheckoutForm() {
     const token = localStorage.getItem("token");
 
     if (!orderId) {
-      throw new Error(
-        "No se encontró la orden asociada al pago."
-      );
+      throw new Error("No se encontró la orden asociada al pago.");
     }
 
     const response = await fetch(
-       `${API_URL}/payments/stripe/create-intent`,
+      `${API_URL}/payments/stripe/create-intent`,
       {
         method: "POST",
         headers: {
@@ -89,8 +87,7 @@ function CheckoutForm() {
 
     if (!response.ok) {
       throw new Error(
-        data.message ||
-          "No se pudo iniciar el pago."
+        data.message || "No se pudo iniciar el pago."
       );
     }
 
@@ -105,9 +102,7 @@ function CheckoutForm() {
         data.clientSecret,
         {
           payment_method: {
-            card: elements.getElement(
-              CardNumberElement
-            ),
+            card: elements.getElement(CardNumberElement),
             billing_details: {
               name: cardHolderName,
             },
@@ -115,44 +110,41 @@ function CheckoutForm() {
         }
       );
 
-    //if (stripeError) {
-    //  if (
-    //    stripeError.type === "validation_error"
-    //  ) {
-    //    setError(stripeError.message);
-    //    return;
-    //  }
-
-    //  navigate("/payment/failure", {
-    //    state: booking,
-    //  });
-
-    //  return;
-    //}
-
     if (stripeError) {
-  console.error("❌ ERROR STRIPE:", stripeError);
+      console.error("❌ ERROR STRIPE:", stripeError);
+      setError(
+        stripeError.message || "Stripe no pudo procesar el pago."
+      );
+      return;
+    }
 
-  setError(
-    stripeError.message ||
-      "Stripe no pudo procesar el pago."
-  );
-
-  return;
-}
-
-    navigate(
-      paymentIntent.status === "succeeded"
-        ? "/payment/success"
-        : "/payment/pending",
-      {
-        state: booking,
+    if (paymentIntent.status === "succeeded") {
+      try {
+        await fetch(`${API_URL}/payments/process`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            orderId,
+            amount: Number(deposit) || Number(totalPrice) * 0.3 || 1500,
+            provider: "stripe",
+            externalPaymentId: paymentIntent.id,
+            status: "paid",
+          }),
+        });
+      } catch (processErr) {
+        console.error("Error al registrar el pago en la BD:", processErr);
       }
-    );
+
+      navigate("/payment/success", { state: booking });
+    } else {
+      navigate("/payment/pending", { state: booking });
+    }
   } catch (err) {
     setError(
-      err.message ||
-        "Ocurrió un error al procesar el pago."
+      err.message || "Ocurrió un error al procesar el pago."
     );
   } finally {
     setLoading(false);

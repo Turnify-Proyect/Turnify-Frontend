@@ -12,6 +12,7 @@ const Navbar = () => {
   const isRegister = location.pathname === "/register";
 
   const isAdmin = user?.roles?.includes("admin");
+  const isProfessional = user?.roles?.includes("professional");
 
   const handleLogout = () => {
     logout();
@@ -36,10 +37,20 @@ const Navbar = () => {
         <div className="navbar-actions">{isAuthenticated ? (
             <>
               <Link
-                to={isAdmin ? "/admin" : "/dashboard"}
+                to={
+                  isAdmin
+                    ? "/admin"
+                    : isProfessional
+                      ? "/professional"
+                      : "/dashboard"
+                }
                 className="navbar-login"
               >
-                {isAdmin ? "Panel Admin" : "Mi cuenta"}
+                {isAdmin
+                  ? "Panel Admin"
+                  : isProfessional
+                    ? "Panel profesional"
+                    : "Mi cuenta"}
               </Link>
           
               <button
