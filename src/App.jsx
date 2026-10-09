@@ -12,6 +12,8 @@ import About from "./Views/About/About";
 import Contact from "./Views/Contact/Contact";
 import AdminDashboard from "./Views/Admin/AdminDashboard";
 import VerifyEmail from "./Views/VerifyEmail/VerifyEmail";
+import ForgotPassword from "./Views/ForgotPassword/ForgotPassword";
+import ResetPassword from "./Views/ResetPassword/ResetPassword";
 import Checkout from "./Views/Checkout/Checkout";
 import PaymentSuccess from "./Views/Payment/PaymentSuccess";
 import PaymentFailure from "./Views/Payment/PaymentFailure";
@@ -109,6 +111,8 @@ function App() {
         />
 
         <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
       </Routes>
 
       <Chatbot />
