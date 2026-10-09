@@ -1,5 +1,6 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
+import { FiUser, FiCalendar  } from "react-icons/fi";
 
 const ProfessionalSidebar = ({ section, setSection }) => {
   const { logout, user } = useAuth();
@@ -14,7 +15,7 @@ const ProfessionalSidebar = ({ section, setSection }) => {
     {
       key: "agenda",
       label: "Mi Agenda",
-      icon: "▣",
+      icon: <FiCalendar />,
     },
     {
       key: "services",
@@ -25,6 +26,11 @@ const ProfessionalSidebar = ({ section, setSection }) => {
       key: "availability",
       label: "Mi Disponibilidad",
       icon: "◷",
+    },
+      {
+      key: "profile",
+      label: "Mi Perfil",
+      icon: <FiUser />,
     },
   ];
 

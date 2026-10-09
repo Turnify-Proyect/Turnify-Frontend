@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { toast } from "react-toastify";
 import Navbar from "../../components/Header/Navbar";
+import UserProfile from "../../components/Profile/UserProfile";
 import "./ClientDashboard.css";
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -20,18 +21,6 @@ function ClientDashboard() {
   const [tab, setTab] = useState("appointments");
 
   const [profile, setProfile] = useState(null);
-  const [profileData, setProfileData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    country: "",
-    city: "",
-    address: "",
-  });
-
-  const [selectedImage, setSelectedImage] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
-  const [uploadingImage, setUploadingImage] = useState(false);
   const [appointments, setAppointments] = useState([]);
 
   const [loading, setLoading] = useState(true);
@@ -64,15 +53,6 @@ function ClientDashboard() {
         const appointmentsData = await appointmentsResponse.json();
 
         setProfile(profileDataResponse);
-
-        setProfileData({
-          name: profileDataResponse.name ?? "",
-          email: profileDataResponse.email ?? "",
-          phone: profileDataResponse.phone ?? "",
-          country: profileDataResponse.country ?? "",
-          city: profileDataResponse.city ?? "",
-          address: profileDataResponse.address ?? "",
-        });
 
         setAppointments(appointmentsData);
       } catch (error) {
@@ -116,117 +96,6 @@ function ClientDashboard() {
     return labels[status] ?? status;
   };
 
-  const getInitials = () => {
-    if (!profileData.name) return "";
-
-    return profileData.name
-      .split(" ")
-      .map((word) => word[0])
-      .join("")
-      .slice(0, 2)
-      .toUpperCase();
-  };
-
-  const handleImageChange = (event) => {
-    const file = event.target.files?.[0];
-
-    if (!file) return;
-
-    setSelectedImage(file);
-
-    const previewUrl = URL.createObjectURL(file);
-    setImagePreview(previewUrl);
-  };
-
-  const handleUploadImage = async () => {
-    if (!selectedImage) return;
-
-    try {
-      setUploadingImage(true);
-
-      const formData = new FormData();
-      formData.append("file", selectedImage);
-
-      const response = await fetch(
-        `${API_URL}/users/${profile.id}/upload-avatar`,
-        {
-          method: "PATCH",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formData,
-        }
-      );
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(
-          Array.isArray(data.message)
-            ? data.message.join(", ")
-            : data.message || "No se pudo subir la imagen"
-        );
-      }
-
-      setProfile(data);
-      setSelectedImage(null);
-      setImagePreview(null);
-
-      alert("Foto de perfil actualizada correctamente");
-    } catch (error) {
-      alert(error.message);
-    } finally {
-      setUploadingImage(false);
-    }
-  };
-
-  const handleSaveProfile = async () => {
-    try {
-      const payload = {
-        name: profileData.name,
-        email: profileData.email,
-        phone: profileData.phone,
-      };
-
-      // Los campos opcionales solo se envían si tienen contenido real,
-      // para no disparar las validaciones de longitud mínima del backend
-      // (country/address/city son @IsOptional() + @MinLength(), y un
-      // string vacío no cuenta como "ausente" para esa validación).
-      if (profileData.country?.trim()) payload.country = profileData.country;
-      if (profileData.address?.trim()) payload.address = profileData.address;
-      if (profileData.city?.trim()) payload.city = profileData.city;
-
-      const response = await fetch(`${API_URL}/users/${profile.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.message || "No se pudo actualizar el perfil"
-        );
-      }
-
-      const updatedUser = await response.json();
-
-      setProfile((currentProfile) => ({
-        ...currentProfile,
-        ...profileData,
-      }));
-
-      toast.success("¡Perfil actualizado correctamente!");
-    } catch (error) {
-      const formattedMessage = Array.isArray(error.message)
-        ? error.message.join(". ")
-        : String(error.message || "").replace(/,/g, ". ");
-      toast.error(formattedMessage || "No se pudo actualizar el perfil.");
-    }
-  };
 
   const handleCancelAppointment = async (appointmentId) => {
     try {
@@ -581,148 +450,7 @@ function ClientDashboard() {
               )}
             </section>
           )}
-
-          {tab === "profile" && (
-            <section className="profile-card">
-              <div className="profile-header">
-                <div className="profile-avatar">
-                  {imagePreview || profile?.imgUrl ? (
-                    <img
-                      src={imagePreview || profile.imgUrl}
-                      alt="Foto de perfil"
-                      className="profile-avatar-image"
-                    />
-                  ) : (
-                    getInitials()
-                  )}
-                </div>
-
-                <div>
-                  <div className="profile-photo-actions">
-                    <label
-                      htmlFor="profile-image"
-                      className="change-photo-button"
-                    >
-                      Cambiar foto
-                    </label>
-
-                    <input
-                      id="profile-image"
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp"
-                      onChange={handleImageChange}
-                      hidden
-                    />
-
-                    {selectedImage && (
-                      <button
-                        type="button"
-                        className="upload-photo-button"
-                        onClick={handleUploadImage}
-                        disabled={uploadingImage}
-                      >
-                        {uploadingImage ? "Subiendo..." : "Guardar foto"}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="profile-form">
-                <div className="form-group">
-                  <label>Nombre</label>
-
-                  <input
-                    value={profileData.name}
-                    onChange={(e) =>
-                      setProfileData({
-                        ...profileData,
-                        name: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Email</label>
-
-                  <input
-                    value={profileData.email}
-                    onChange={(e) =>
-                      setProfileData({
-                        ...profileData,
-                        email: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Teléfono</label>
-
-                  <input
-                    value={profileData.phone}
-                    onChange={(e) =>
-                      setProfileData({
-                        ...profileData,
-                        phone: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>País</label>
-
-                  <input
-                    value={profileData.country}
-                    onChange={(e) =>
-                      setProfileData({
-                        ...profileData,
-                        country: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Ciudad</label>
-
-                  <input
-                    value={profileData.city}
-                    onChange={(e) =>
-                      setProfileData({
-                        ...profileData,
-                        city: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label>Dirección</label>
-
-                  <input
-                    value={profileData.address}
-                    onChange={(e) =>
-                      setProfileData({
-                        ...profileData,
-                        address: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-
-                <button
-                  type="button"
-                  className="save-profile-button"
-                  onClick={handleSaveProfile}
-                >
-                  Guardar cambios
-                </button>
-              </div>
-            </section>
-          )}
+          {tab === "profile" && <UserProfile />}
         </div>
       </div>
     </>
