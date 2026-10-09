@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "../../../context/AuthContext";
 import {fetchProfessionalServices,fetchMyProfessionalProfile,} from "../professionalApi";
 import "./ProfessionalServices.css";
+import ServiceCard from "../../../components/ServiceCard/ServiceCard";
 
 const ProfessionalServices = () => {
   const { token } = useAuth();
@@ -11,22 +12,32 @@ const ProfessionalServices = () => {
   const [search, setSearch] = useState("");
 
   const getServices = async () => {
-  try {
-    setLoading(true);
-    setError("");
-
-    const professional = await fetchMyProfessionalProfile(token);
-
-    const data = await fetchProfessionalServices(professional.id);
-
-    setServices(Array.isArray(data) ? data : []);
-  } catch (err) {
-    console.error("Error al obtener servicios:", err);
-    setError("No se pudieron cargar los servicios asignados.");
-  } finally {
-    setLoading(false);
-  }
-};
+    try {
+      setLoading(true);
+      setError("");
+    
+      const professional =
+        await fetchMyProfessionalProfile(token);
+    
+      const data =
+        await fetchProfessionalServices(professional.id);
+    
+      const assignedServices = Array.isArray(data)
+        ? data
+            .map((item) => item.service)
+            .filter(Boolean)
+        : [];
+    
+      setServices(assignedServices);
+    } catch (err) {
+      console.error("Error al obtener servicios:", err);
+      setError(
+        "No se pudieron cargar los servicios asignados."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!token) return;
@@ -73,50 +84,15 @@ const ProfessionalServices = () => {
           <p>No tenés servicios asignados actualmente.</p>
         </div>
       ) : (
-        <div className="services-grid">
+        <div className="professional-services-grid">
           {filteredServices.map((service) => (
-            <div className="service-card" key={service.id}>
-              {service.imageUrl ? (
-                <div className="service-card-image-container">
-                  <img
-                    src={service.imageUrl}
-                    alt={service.name}
-                    className="service-card-image"
-                  />
-                </div>
-              ) : (
-                <div className="service-card-placeholder">✦</div>
-              )}
-
-              <div className="service-card-body">
-                <div className="service-card-header">
-                  <h3>{service.name}</h3>
-                  {service.category?.name && (
-                    <span className="service-category-badge">
-                      {service.category.name}
-                    </span>
-                  )}
-                </div>
-
-                {service.description && (
-                  <p className="service-card-description">{service.description}</p>
-                )}
-
-                <div className="service-card-footer">
-                  <div className="service-info-meta">
-                    <span className="meta-item">
-                      ⏱ {service.durationMinutes ? `${service.durationMinutes} min` : "-"}
-                    </span>
-                  </div>
-                  <span className="service-price">
-                    ${Number(service.price || 0).toLocaleString("es-AR")}
-                  </span>
-                </div>
-              </div>
-            </div>
+            <ServiceCard
+              key={service.id}
+              service={service}
+            />
           ))}
         </div>
-      )}
+              )}
     </div>
   );
 };
