@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import Navbar from "../../components/Header/Navbar";
 import "../Login/Login.css";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -11,6 +12,7 @@ export default function ResetPassword() {
   const token = searchParams.get("token");
 
   const [newPassword, setNewPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -98,17 +100,40 @@ export default function ResetPassword() {
                     <label className="label" htmlFor="newPassword">
                       Nueva contraseña
                     </label>
-                    <input
-                      id="newPassword"
-                      type="password"
-                      value={newPassword}
-                      onChange={(e) => {
-                        setNewPassword(e.target.value);
-                        if (error) setError("");
-                      }}
-                      className={`input ${error ? "inputError" : ""}`}
-                      placeholder="••••••••••"
-                    />
+                    <div className="passwordInputWrapper">
+                      <input
+                        id="newPassword"
+                        type={showPassword ? "text" : "password"}
+                        value={newPassword}
+                        onChange={(e) => {
+                          setNewPassword(e.target.value);
+                        
+                          if (error) {
+                            setError("");
+                          }
+                        }}
+                        className={`input ${error ? "inputError" : ""}`}
+                        placeholder="••••••••••"
+                      />
+                    
+                      <button
+                        type="button"
+                        className="passwordToggle"
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        aria-label={
+                          showPassword
+                            ? "Ocultar contraseña"
+                            : "Mostrar contraseña"
+                        }
+                        title={
+                          showPassword
+                            ? "Ocultar contraseña"
+                            : "Mostrar contraseña"
+                        }
+                      >
+                        {showPassword ? <FaEyeSlash /> : <FaEye />}
+                      </button>
+                    </div>
                   </div>
 
                   {error && <p className="loginError">{error}</p>}
