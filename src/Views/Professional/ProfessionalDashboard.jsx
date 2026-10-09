@@ -1,6 +1,7 @@
 import { useState } from "react";
 import "./ProfessionalDashboard.css";
 import "../../components/Admin/AdminShared.css";
+import UserProfile from "../../components/Profile/UserProfile";
 
 import ProfessionalSidebar from "../../components/Professional/ProfessionalSidebar";
 import ProfessionalAgenda from "../../components/Professional/ProfessionalAgenda/ProfessionalAgenda";
@@ -20,6 +21,9 @@ const ProfessionalDashboard = () => {
 
       case "availability":
          return <AdminAvailability professionalMode />;
+      
+      case "profile":
+          return <UserProfile />;
 
       default:
         return <ProfessionalAgenda />;

@@ -564,12 +564,20 @@ const canContinue =
                           }
                         >
                           <div className="bookingProfessionalAvatar">
-                            {professional.user?.name
-                              ?.split(" ")
-                              .map((word) => word[0])
-                              .join("")
-                              .slice(0, 2)
-                              .toUpperCase()}
+                            {professional.user?.imgUrl ? (
+                              <img
+                                src={professional.user.imgUrl}
+                                alt={professional.user?.name || "Profesional"}
+                                className="bookingProfessionalAvatarImage"
+                              />
+                            ) : (
+                              professional.user?.name
+                                ?.split(" ")
+                                .map((word) => word[0])
+                                .join("")
+                                .slice(0, 2)
+                                .toUpperCase()
+                            )}
                           </div>
                             
                           <div>
