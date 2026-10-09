@@ -5,6 +5,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
 import { useAuth } from "../../context/AuthContext";
 import CompleteGoogleRegistration from "../../components/Auth/CompleteGoogleRegistration";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 function Register() {
   const API_URL = import.meta.env.VITE_API_URL;
@@ -16,6 +17,8 @@ function Register() {
     password: "",
     confirmPassword: "",
   });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);  
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState({});
@@ -380,18 +383,38 @@ const handleCompleteGoogleSignUp = async (e) => {
                     Contraseña
                   </label>
 
-                  <input
-                    id="password"
-                    name="password"
-                    type="password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    onBlur={validatePassword}
-                    className={`input ${
-                      fieldErrors.password ? "inputError" : ""
-                    }`}
-                    placeholder="••••••••"
-                  />
+                  <div className="passwordInputWrapper">
+                      <input
+                        id="password"
+                        name="password"
+                        type={showPassword ? "text" : "password"}
+                        value={formData.password}
+                        onChange={handleChange}
+                        onBlur={validatePassword}
+                        className={`input ${
+                          fieldErrors.password ? "inputError" : ""
+                        }`}
+                        placeholder="••••••••"
+                      />
+
+                      <button
+                        type="button"
+                        className="passwordToggle"
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        aria-label={
+                          showPassword
+                            ? "Ocultar contraseña"
+                            : "Mostrar contraseña"
+                        }
+                        title={
+                          showPassword
+                            ? "Ocultar contraseña"
+                            : "Mostrar contraseña"
+                        }
+                      >
+                        {showPassword ? <FaEyeSlash /> : <FaEye />}
+                      </button>
+                    </div>
 
                   {fieldErrors.password && (
                     <p className="fieldError">
@@ -413,20 +436,40 @@ const handleCompleteGoogleSignUp = async (e) => {
                     Confirmar contraseña
                   </label>
 
-                  <input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type="password"
-                    value={formData.confirmPassword}
-                    onChange={handleChange}
-                    onBlur={validateConfirmPassword}
-                    className={`input ${
-                      fieldErrors.confirmPassword
-                        ? "inputError"
-                        : ""
-                    }`}
-                    placeholder="••••••••"
-                  />
+                  <div className="passwordInputWrapper">
+                      <input
+                        id="confirmPassword"
+                        name="confirmPassword"
+                        type={showConfirmPassword ? "text" : "password"}
+                        value={formData.confirmPassword}
+                        onChange={handleChange}
+                        onBlur={validateConfirmPassword}
+                        className={`input ${
+                          fieldErrors.confirmPassword ? "inputError" : ""
+                        }`}
+                        placeholder="••••••••"
+                      />
+                    
+                      <button
+                        type="button"
+                        className="passwordToggle"
+                        onClick={() =>
+                          setShowConfirmPassword((prev) => !prev)
+                        }
+                        aria-label={
+                          showConfirmPassword
+                            ? "Ocultar contraseña"
+                            : "Mostrar contraseña"
+                        }
+                        title={
+                          showConfirmPassword
+                            ? "Ocultar contraseña"
+                            : "Mostrar contraseña"
+                        }
+                      >
+                        {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+                      </button>
+                    </div>
 
                   {fieldErrors.confirmPassword && (
                     <p className="fieldError">

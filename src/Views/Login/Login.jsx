@@ -5,6 +5,7 @@ import Navbar from "../../components/Header/Navbar";
 import "./Login.css";
 import { GoogleLogin } from "@react-oauth/google";
 import CompleteGoogleRegistration from "../../components/Auth/CompleteGoogleRegistration";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -43,6 +44,7 @@ export default function Login() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState({});
@@ -299,12 +301,16 @@ export default function Login() {
                       value={email}
                       onChange={(e) => {
                         setEmail(e.target.value);
-                        if (fieldErrors.email) {
-                          setFieldErrors((prev) => ({
-                            ...prev,
-                            email: "",
-                          }));
-                        }
+
+                        setPassword("");
+                        setShowPassword(false);
+
+                        setFieldErrors((prev) => ({
+                          ...prev,
+                          email: "",
+                          password: "",
+                        }));
+                      
                         if (error) {
                           setError("");
                         }
@@ -322,28 +328,50 @@ export default function Login() {
                     <label className="label" htmlFor="password">
                       Contraseña
                     </label>
-                    <input
-                      id="password"
-                      type="password"
-                      value={password}
-                      onChange={(e) => {
-                        setPassword(e.target.value);
+                    <div className="passwordInputWrapper">
+                        <input
+                          id="password"
+                          type={showPassword ? "text" : "password"}
+                          value={password}
+                          onChange={(e) => {
+                            setPassword(e.target.value);
+                          
+                            if (fieldErrors.password) {
+                              setFieldErrors((prev) => ({
+                                ...prev,
+                                password: "",
+                              }));
+                            }
+                          
+                            if (error) {
+                              setError("");
+                            }
+                          }}
+                          onBlur={validatePassword}
+                          className={`input ${
+                            fieldErrors.password ? "inputError" : ""
+                          }`}
+                          placeholder="••••••••••"
+                        />
 
-                        if (fieldErrors.password) {
-                          setFieldErrors((prev) => ({
-                            ...prev,
-                            password: "",
-                          }));
-                        }
-
-                        if (error) {
-                          setError("");
-                        }
-                      }}
-                      onBlur={validatePassword}
-                      className={`input ${fieldErrors.password ? "inputError" : ""}`}
-                      placeholder="••••••••••"
-                    />
+                        <button
+                          type="button"
+                          className="passwordToggle"
+                          onClick={() => setShowPassword((prev) => !prev)}
+                          aria-label={
+                            showPassword
+                              ? "Ocultar contraseña"
+                              : "Mostrar contraseña"
+                          }
+                          title={
+                            showPassword
+                              ? "Ocultar contraseña"
+                              : "Mostrar contraseña"
+                          }
+                        >
+                          {showPassword ? <FaEyeSlash /> : <FaEye />}
+                        </button>
+                      </div>
                     {fieldErrors.password && (
                       <p className="fieldError">{fieldErrors.password}</p>
                     )}
